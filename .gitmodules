@@ -1,0 +1,3 @@
+[submodule "UE_msgs"]
+	path = UE_msgs
+	url = git@github.com:rapyuta-robotics/UE_msgs.git
