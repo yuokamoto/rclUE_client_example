@@ -8,11 +8,10 @@
   <license>Apache License 2.0</license>
 
   <exec_depend>rclpy</exec_depend>
-  <exec_depend>std_msgs</exec_depend>
-
-  <depend>ue_msgs</depend>
-  <build_depend>ue_msgs</build_depend>
-
+  <exec_depend>example_interfaces</exec_depend>
+  <exec_depend>ue_msgs</exec_depend>
+  <exec_depend>python-numpy-quaternion-pip</exec_depend>
+  
   <test_depend>ament_copyright</test_depend>
   <test_depend>ament_flake8</test_depend>
   <test_depend>ament_pep257</test_depend>

@@ -21,7 +21,7 @@ Please check following as well
     git clone  --recursive git@github.com:yuokamoto/rclUE_client_example.git
     cd ../../
     source /opt/ros/<ros-distro>/setup.bash
-    colcon build --packages-up-to rclUE_client_example
+    colcon build --symlink-install --packages-up-to rclUE_client_example
     ```
 3. Run example client 
     ```
