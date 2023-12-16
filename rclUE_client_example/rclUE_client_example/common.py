@@ -24,6 +24,7 @@ import numpy as np
 import quaternion
 
 class ExternalDeviceClient(Node):
+    payload_id = 0
     def __init__(self, name):
         super().__init__(name)
         
@@ -57,6 +58,11 @@ class ExternalDeviceClient(Node):
         else:
             self.get_logger().error('Failed to spawn {}'.format(name))
 
+    def spawn_payload(self, pose, payload_model):
+        print(ExternalDeviceClient.payload_id)
+        self.spawn_model(pose, payload_model, '', 'payload'+str(ExternalDeviceClient.payload_id), 'Payload', {})
+        ExternalDeviceClient.payload_id += 1
+
     def delete_model(self, name):
         req = DeleteEntity.Request()
         req.name = name
@@ -69,7 +75,7 @@ class ExternalDeviceClient(Node):
             self.get_logger().info('Successfully deleted {}'.format(name))
         else:
             self.get_logger().error('Failed to delete {}'.format(name))
-
+    
 from enum import Enum
 class ModelNames(Enum):
     CUBE = 'CUBE'
