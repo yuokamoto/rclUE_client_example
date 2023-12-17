@@ -22,11 +22,20 @@ from geometry_msgs.msg import Pose, Quaternion
 import json
 import numpy as np
 import quaternion
+from enum import Enum
+
+class ModelNames(Enum):
+    PHYSICS_CUBE = 'BP_PhysicsCube'
+    NON_PHYSICS_CUBE = 'BP_NonPhysicsCube'
+    CONVEYOR = 'BP_Conveyor'
+    SPLINE_CONVEYOR = 'BP_Spline_Conveyor'
+    ELEVATOR = 'BP_Elevator2S'
+    VERTICAL_CONVEYOR = 'BP_VerticalConveyor'
 
 class ExternalDeviceClient(Node):
     payload_id = 0
-    def __init__(self, name):
-        super().__init__(name)
+    def __init__(self, name, **kwargs):
+        super().__init__(name, **kwargs)
         
     def spawn_model(self, pose, model_name, namespace, name, tag, json_parameters):
         q = quaternion.from_euler_angles(pose['roll'], pose['pitch'], pose['yaw'])
@@ -59,7 +68,6 @@ class ExternalDeviceClient(Node):
             self.get_logger().error('Failed to spawn {}'.format(name))
 
     def spawn_payload(self, pose, payload_model):
-        print(ExternalDeviceClient.payload_id)
         self.spawn_model(pose, payload_model, '', 'payload'+str(ExternalDeviceClient.payload_id), 'Payload', {})
         ExternalDeviceClient.payload_id += 1
 
@@ -76,10 +84,3 @@ class ExternalDeviceClient(Node):
         else:
             self.get_logger().error('Failed to delete {}'.format(name))
     
-from enum import Enum
-class ModelNames(Enum):
-    CUBE = 'CUBE'
-    CONVEYOR = 'BP_Conveyor'
-    SPLINE_CONVEYOR = 'BP_Spline_Conveyor'
-    ELEVATOR = 'BP_Elevator2S'
-    VERTICAL_CONVEYOR = 'BP_VerticalConveyor'
