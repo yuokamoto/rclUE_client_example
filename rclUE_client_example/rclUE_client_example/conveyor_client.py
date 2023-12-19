@@ -47,6 +47,7 @@ class ConveyorMode(Enum):
 class ConveyorClient(ExternalDeviceClient):
     def __init__(self, name, **kwargs):
         super().__init__(name, **kwargs)
+        self.model_name = ModelNames.CONVEYOR.value
 
         # parameters
         self.declare_parameter('speed', 1.0)
@@ -64,17 +65,20 @@ class ConveyorClient(ExternalDeviceClient):
         # default values
         self.mode = ConveyorMode.MOVE_TILL_HIT
         self.payload_status = False
+        self.speed = self.get_parameter('speed').value
 
         # spawn 
         json_parameters = {
             'size': self.parse_size_param(),
-            'speed':  self.get_parameter('speed').value,
+            'speed': self.speed,
             'debug': self.get_parameter('debug').value,
             'mode': ConveyorMode.MOVE_TILL_HIT.value,
             'enable_widget': self.get_parameter('enable_widget').value,
             'disable_physics': self.get_parameter('disable_physics').value
         }
-        self.spawn_model(self.get_parameter('spawn_pose').value, ModelNames.CONVEYOR.value, name, name, '', json_parameters)
+        namespace = self.get_namespace()
+        entity_name = namespace[1:len(namespace)]
+        self.spawn_self(self.get_parameter('spawn_pose').value, entity_name, entity_name, '', json_parameters)
         self.spawn_payload(ModelNames.PHYSICS_CUBE.value)
         
     def entrances_cb(self, msg):
@@ -88,7 +92,7 @@ class ConveyorClient(ExternalDeviceClient):
             # move payload until payload move out
             self.mode = ConveyorMode.MOVE_OUT
             
-            speed_cmd.data = -CONVEYOR_SPEED
+            speed_cmd.data = -self.speed
             mode_cmd.data = self.mode.value
             
             self.speed_publisher_.publish(speed_cmd)
@@ -103,7 +107,7 @@ class ConveyorClient(ExternalDeviceClient):
             # move payload until hit the sensor
             self.mode = ConveyorMode.MOVE_TILL_HIT
             
-            speed_cmd.data = CONVEYOR_SPEED
+            speed_cmd.data = self.speed
             mode_cmd.data = self.mode.value
 
             self.speed_publisher_.publish(speed_cmd)

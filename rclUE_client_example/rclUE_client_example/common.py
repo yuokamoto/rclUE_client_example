@@ -36,10 +36,11 @@ class ModelNames(Enum):
     VERTICAL_CONVEYOR = 'BP_VerticalConveyor'
 
 class ExternalDeviceClient(Node):
-    payload_id = 0
     def __init__(self, name, **kwargs):
         super().__init__(name, **kwargs)
         self.future = None
+        self.model_name = ""
+        self.payload_id = 0
         self.declare_parameter('debug', False)
         self.declare_parameter('enable_widget', True)
         self.declare_parameter('disable_physics', False)
@@ -57,7 +58,7 @@ class ExternalDeviceClient(Node):
     def parse_size_param(self):
         return array_to_size_param(self.get_parameter('size').value)
 
-    def spawn_model(self, pose, model_name, namespace, name, tag, json_parameters):
+    def spawn_model(self, pose, model_name, name, namespace, tag, json_parameters):
         q = quaternion.from_euler_angles(pose[3], pose[4], pose[5])
         initial_pose = Pose()
         initial_pose.position.x = pose[0]
@@ -77,6 +78,7 @@ class ExternalDeviceClient(Node):
         req.tags = [tag]
         req.json_parameters = json.dumps(json_parameters)
 
+        self.get_logger().info('Send spawn request of {}'.format(name))
         srv_client = self.create_client(SpawnEntity, '/SpawnEntity')
         self.future = srv_client.call_async(req)
 
@@ -88,10 +90,15 @@ class ExternalDeviceClient(Node):
                 self.get_logger().error('Failed to spawn {}'.format(name))
         
         self.future.add_done_callback(cb)
+    
+    def spawn_self(self, pose, name, namespace, tag, json_parameters):
+        self.spawn_model(pose, self.model_name, name, namespace, tag, json_parameters)
 
     def spawn_payload(self, payload_model):
-        self.spawn_model(self.get_parameter('payload_spawn_pose').value, payload_model, '', 'payload'+str(ExternalDeviceClient.payload_id), 'Payload', {})
-        ExternalDeviceClient.payload_id += 1
+        namespace = self.get_namespace()
+        entity_name = namespace[1:len(namespace)]
+        self.spawn_model(self.get_parameter('payload_spawn_pose').value, payload_model, namespace + '_payload'+str(self.payload_id), '', 'Payload', {})
+        self.payload_id += 1
 
     def delete_model(self, name):
         req = DeleteEntity.Request()
