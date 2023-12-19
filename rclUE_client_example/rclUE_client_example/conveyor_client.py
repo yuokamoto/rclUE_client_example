@@ -17,7 +17,7 @@ from rclpy.node import Node
 from example_interfaces.msg import Int32, Float32, Int32MultiArray
 from geometry_msgs.msg import Pose, Quaternion
 
-from .common import ExternalDeviceClient, ModelNames
+from .common import ExternalDeviceClient, ModelNames, array_to_size_param
 
 
 ##########################################################################################
@@ -37,16 +37,21 @@ class ConveyorMode(Enum):
     MOVE_TILL_HIT = 1
 
 # Parameter
-CONVEYOR_POSE = {'x': 1.0, 'y': 0.0, 'z': 0.5, 'roll': 0.0, 'pitch': 0.0, 'yaw': 1.57}
-PAYLOAD_SPAWN_POSE = {'x': 1.0, 'y': 0.0, 'z': 5.5, 'roll': 0.0, 'pitch': 0.0, 'yaw': 0.0}
-CONVEYOR_SCALE = {'X': 5 , 'Y': 2.0, 'Z': 1.0} # it uses capital since X,Y,Z is attribute name of UE
-CONVEYOR_SPEED = 1.0
-DEBUG = True
-ENABLE_WIDGET = True
+# CONVEYOR_POSE = {'x': 1.0, 'y': 0.0, 'z': 0.5, 'roll': 0.0, 'pitch': 0.0, 'yaw': 1.57}
+# PAYLOAD_SPAWN_POSE = {'x': 1.0, 'y': 0.0, 'z': 5.5, 'roll': 0.0, 'pitch': 0.0, 'yaw': 0.0}
+# CONVEYOR_SCALE = {'X': 5 , 'Y': 2.0, 'Z': 1.0} # it uses capital since X,Y,Z is attribute name of UE
+# CONVEYOR_SPEED = 1.0
+# DEBUG = True
+# ENABLE_WIDGET = True
 
 class ConveyorClient(ExternalDeviceClient):
-    def __init__(self, name, disable_physics=False, **kwargs):
+    def __init__(self, name, **kwargs):
         super().__init__(name, **kwargs)
+
+        # parameters
+        self.declare_parameter('speed', 1.0)
+
+        # pub/sub
         self.speed_publisher_ = self.create_publisher(Float32, 'set_vel', 10)
         self.mode_publisher_ = self.create_publisher(Int32, 'set_mode', 10)
         self.status_subscription = self.create_subscription(
@@ -55,25 +60,27 @@ class ConveyorClient(ExternalDeviceClient):
             self.entrances_cb,
             10)
         self.status_subscription  # prevent unused variable warning
+
+        # default values
         self.mode = ConveyorMode.MOVE_TILL_HIT
         self.payload_status = False
 
+        # spawn 
         json_parameters = {
-            'size': CONVEYOR_SCALE,
-            'speed': CONVEYOR_SPEED,
-            'debug': DEBUG,
+            'size': self.parse_size_param(),
+            'speed':  self.get_parameter('speed').value,
+            'debug': self.get_parameter('debug').value,
             'mode': ConveyorMode.MOVE_TILL_HIT.value,
-            'enable_widget': ENABLE_WIDGET,
-            'disable_physics': disable_physics
+            'enable_widget': self.get_parameter('enable_widget').value,
+            'disable_physics': self.get_parameter('disable_physics').value
         }
-        self.spawn_model(CONVEYOR_POSE, ModelNames.CONVEYOR.value, name, name, '', json_parameters)
-        self.spawn_payload(PAYLOAD_SPAWN_POSE, ModelNames.PHYSICS_CUBE.value)
+        self.spawn_model(self.get_parameter('spawn_pose').value, ModelNames.CONVEYOR.value, name, name, '', json_parameters)
+        self.spawn_payload(ModelNames.PHYSICS_CUBE.value)
         
     def entrances_cb(self, msg):
 
         entrance0 = msg.data[0]
         entrance1 = msg.data[1]
-        print(entrance0, entrance1)
         if entrance0:
             speed_cmd = Float32()
             mode_cmd = Int32()
@@ -101,26 +108,16 @@ class ConveyorClient(ExternalDeviceClient):
 
             self.speed_publisher_.publish(speed_cmd)
             self.mode_publisher_.publish(mode_cmd)                
-            self.spawn_payload(PAYLOAD_SPAWN_POSE, ModelNames.PHYSICS_CUBE.value)
-            
-        # timer_period = 1  # seconds
-        # self.timer = self.create_timer(timer_period, self.timer_callback)
-    # def timer_callback(self):
-    #     self.get_logger().info('Publishing: "%s"' % msg.data)
-
+            self.spawn_payload(ModelNames.PHYSICS_CUBE.value)
 
 def main(args=None):
     rclpy.init(args=args)
 
-    physics_client = ConveyorClient('physics_conveyor', disable_physics=True, namespace='physics_conveyor')
-    # non_physics_client = ConveyorClient('non_physics_conveyor', disable_physics=False)
+    conveyor_client = ConveyorClient('conveyor_client')
 
-    rclpy.spin(physics_client)
+    rclpy.spin(conveyor_client)
 
-    # Destroy the node explicitly
-    # (optional - otherwise it will be done automatically
-    # when the garbage collector destroys the node object)
-    client.destroy_node()
+    conveyor_client.destroy_node()
     rclpy.shutdown()
 
 
