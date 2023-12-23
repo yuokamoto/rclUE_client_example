@@ -5,15 +5,16 @@ Example of rclUE client
 This is client example of rclUE and related UnrealEngine x ROS 2 porject.
 
 Please check following as well
-- rclUE documentation
+- [rclUE](https://rclue.readthedocs.io/en/devel/index.html): This repo enables communication between UE and ROS 2.
+- [RapyutaSimulationPlugins](https://rapyutasimulationplugins.readthedocs.io/en/devel/index.html): This repo has classes/tools to create ROS 2 enables robots with rclUE.
 
 ## How to use
 ### Setup UE project
-1. Download Unreal Engine 5 and set up ?? by following README of the repo.
-2. Open ?? map and play
+1. Download Unreal Engine 5 and set up [rclUE-Examples](https://github.com/yuokamoto/rclUE-Examples/tree/main/Config) by following README of the repo.
+2. Open Default map and play
 
-### Setup ROS2 ws project
-1. Install ROS 2 by following this
+### Setup and run ROS2 ws project
+1. Install ROS 2 by following https://docs.ros.org/en/humble/Installation/Ubuntu-Install-Debians.html 
 2. Create and build ROS 2 ws.
     ```
     mkdir -p colcon_ws/src
@@ -28,7 +29,7 @@ Please check following as well
     ```
     source /opt/ros/<ros-distro>/setup.bash
     source colcon_ws/install/setup.bash
-    ros2 run rclUE_client_example <example package name>
+    ros2 run rclUE_client_example <example package name, e.g. conveyor_client>
     ```
 
 ## List of examples

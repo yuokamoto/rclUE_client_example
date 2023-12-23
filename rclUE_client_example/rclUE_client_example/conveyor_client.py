@@ -36,14 +36,6 @@ class ConveyorMode(Enum):
     MOVE_OUT = 0
     MOVE_TILL_HIT = 1
 
-# Parameter
-# CONVEYOR_POSE = {'x': 1.0, 'y': 0.0, 'z': 0.5, 'roll': 0.0, 'pitch': 0.0, 'yaw': 1.57}
-# PAYLOAD_SPAWN_POSE = {'x': 1.0, 'y': 0.0, 'z': 5.5, 'roll': 0.0, 'pitch': 0.0, 'yaw': 0.0}
-# CONVEYOR_SCALE = {'X': 5 , 'Y': 2.0, 'Z': 1.0} # it uses capital since X,Y,Z is attribute name of UE
-# CONVEYOR_SPEED = 1.0
-# DEBUG = True
-# ENABLE_WIDGET = True
-
 class ConveyorClient(ExternalDeviceClient):
     def __init__(self, name, **kwargs):
         super().__init__(name, **kwargs)

@@ -27,6 +27,7 @@ from enum import Enum
 def array_to_size_param(size):
     return {'X': size[0], 'Y': size[1], 'Z': size[2]}
 
+# UE assets name. This is specified in DefaultRapyutaSimSettings.ini
 class ModelNames(Enum):
     PHYSICS_CUBE = 'BP_PhysicsCube'
     NON_PHYSICS_CUBE = 'BP_NonPhysicsCube'
@@ -41,6 +42,8 @@ class ExternalDeviceClient(Node):
         self.future = None
         self.model_name = ""
         self.payload_id = 0
+
+        # common ROS parameters
         self.declare_parameter('debug', False)
         self.declare_parameter('enable_widget', True)
         self.declare_parameter('disable_physics', False)
@@ -48,13 +51,18 @@ class ExternalDeviceClient(Node):
         self.declare_parameter('size', [1.0, 1.0, 1.0])
         self.declare_parameter('spawn_pose', [0.0, 0.0, 0.0, 0.0, 0.0, 0.0])
         self.declare_parameter('payload_spawn_pose', [0.0, 0.0, 3.0, 0.0, 0.0, 0.0])
-    
-    #     timer_period = 1  # seconds
-    #     self.timer = self.create_timer(timer_period, self.timer_callback)
-    
-    # def timer_callback(self):
-    #     self.get_logger().info('Publishing: "%s"' % msg.data)
 
+        self.spawn_srv_client = self.create_client(SpawnEntity, '/SpawnEntity')
+        while not self.spawn_srv_client.wait_for_service(timeout_sec=1.0):
+            self.get_logger().info('service not available, waiting again...')
+            self.destroy_node() 
+        
+        self.delete_srv_client = self.create_client(DeleteEntity, '/DeleteEntity')
+        while not self.delete_srv_client.wait_for_service(timeout_sec=1.0):
+            self.get_logger().info('service not available, waiting again...')
+            self.destroy_node() 
+
+    
     def parse_size_param(self):
         return array_to_size_param(self.get_parameter('size').value)
 
@@ -79,8 +87,7 @@ class ExternalDeviceClient(Node):
         req.json_parameters = json.dumps(json_parameters)
 
         self.get_logger().info('Send spawn request of {}'.format(name))
-        srv_client = self.create_client(SpawnEntity, '/SpawnEntity')
-        self.future = srv_client.call_async(req)
+        self.future = self.spawn_srv_client.call_async(req)
 
         def cb(future):
             res = future.result()
@@ -103,8 +110,7 @@ class ExternalDeviceClient(Node):
     def delete_model(self, name):
         req = DeleteEntity.Request()
         req.name = name
-        srv_client = self.create_client(DeleteEntity, '/DeleteEntity')
-        self.future = srv_client.call_async(req)
+        self.future = self.delete_srv_client.call_async(req)
 
         def cb(future):
             res = future.result()
