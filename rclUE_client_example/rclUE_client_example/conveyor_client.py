@@ -39,7 +39,6 @@ class ConveyorMode(Enum):
 class ConveyorClient(ExternalDeviceClient):
     def __init__(self, name, **kwargs):
         super().__init__(name, **kwargs)
-        self.model_name = ModelNames.CONVEYOR.value
 
         # parameters
         self.declare_parameter('speed', 1.0)

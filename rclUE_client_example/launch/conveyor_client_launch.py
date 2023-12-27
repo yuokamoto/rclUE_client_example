@@ -15,9 +15,10 @@ def generate_launch_description():
                 'enable_widget': True,
                 'disable_physics': False,
                 'mode': 0,
-                'size': [2.0, 0.5, 0.1],
-                'spawn_pose': [0.0, 0.0, 0.5, 0.0, 0.0, 1.57],
-                'payload_spawn_pose': [0.0, 0.0, 3.0, 0.0, 0.0, 0.0]
+                'size': [2.0, 1.0, 1.0],
+                'spawn_pose': [0.0, 0.0, 0.0, 0.0, 0.0, 1.57],
+                'payload_spawn_pose': [0.0, 0.0, 3.0, 0.0, 0.0, 0.0],
+                'model_name': 'BP_BeltConveyor'
             }]
 
         ),
@@ -33,9 +34,10 @@ def generate_launch_description():
                 'enable_widget': True,
                 'disable_physics': True,
                 'mode': 0,
-                'size': [3.0, 0.5, 0.1],
-                'spawn_pose': [0.0, 3.0, 0.5, 0.0, 0.0, 0.0],
-                'payload_spawn_pose': [0.0, 3.0, 3.0, 0.0, 0.0, 0.0]
+                'size': [3.0, 1.0, 1.0],
+                'spawn_pose': [0.0, 3.0, 0.0, 0.0, 0.0, 0.0],
+                'payload_spawn_pose': [0.0, 3.0, 3.0, 0.0, 0.0, 0.0],
+                'model_name': 'BP_RollerConveyor'
             }]
         )
     ])

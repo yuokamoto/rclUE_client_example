@@ -32,9 +32,21 @@ class ModelNames(Enum):
     PHYSICS_CUBE = 'BP_PhysicsCube'
     NON_PHYSICS_CUBE = 'BP_NonPhysicsCube'
     CONVEYOR = 'BP_Conveyor'
+    BELT_CONVEYOR = 'BP_BeltConveyor'
+    ROLLER_CONVEYOR = 'BP_RollerConveyor'
     SPLINE_CONVEYOR = 'BP_Spline_Conveyor'
     ELEVATOR = 'BP_Elevator2S'
     VERTICAL_CONVEYOR = 'BP_VerticalConveyor'
+    
+    @classmethod
+    def value_of(cls, value):
+        for k, v in cls.__members__.items():
+            if k == value:
+                return v
+        else:
+            raise ValueError(f"'{cls.__name__}' enum not found for '{value}'")
+
+
 
 class ExternalDeviceClient(Node):
     def __init__(self, name, **kwargs):
@@ -51,15 +63,23 @@ class ExternalDeviceClient(Node):
         self.declare_parameter('size', [1.0, 1.0, 1.0])
         self.declare_parameter('spawn_pose', [0.0, 0.0, 0.0, 0.0, 0.0, 0.0])
         self.declare_parameter('payload_spawn_pose', [0.0, 0.0, 3.0, 0.0, 0.0, 0.0])
+        self.declare_parameter('model_name', 'test')
+        self.declare_parameter('model_name2', 'test2')
+
+        # get model name
+        self.model_name = self.get_parameter('model_name').value
+        if self.model_name == '':
+            self.get_logger().error('You must provide valid model name as a ROS parameter')
+            self.destroy_node() 
 
         self.spawn_srv_client = self.create_client(SpawnEntity, '/SpawnEntity')
         while not self.spawn_srv_client.wait_for_service(timeout_sec=1.0):
-            self.get_logger().info('service not available, waiting again...')
+            self.get_logger().error('SpawnEntity not available')
             self.destroy_node() 
         
         self.delete_srv_client = self.create_client(DeleteEntity, '/DeleteEntity')
         while not self.delete_srv_client.wait_for_service(timeout_sec=1.0):
-            self.get_logger().info('service not available, waiting again...')
+            self.get_logger().error('DeleteEntity not available')
             self.destroy_node() 
 
     
