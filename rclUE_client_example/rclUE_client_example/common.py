@@ -29,12 +29,18 @@ def array_to_size_param(size):
 
 # UE assets name. This is specified in DefaultRapyutaSimSettings.ini
 class ModelNames(Enum):
+    # payload
     PHYSICS_CUBE = 'BP_PhysicsCube'
     NON_PHYSICS_CUBE = 'BP_NonPhysicsCube'
+    # conveyor
     CONVEYOR = 'BP_Conveyor'
     BELT_CONVEYOR = 'BP_BeltConveyor'
     ROLLER_CONVEYOR = 'BP_RollerConveyor'
-    SPLINE_CONVEYOR = 'BP_Spline_Conveyor'
+    # spline conveyor
+    SPLINE_CONVEYOR = 'BP_SplineConveyor'
+    BELT_SPLINE_CONVEYOR = 'BP_BeltSplineConveyor'
+    ROLLER_SPLINE_CONVEYOR = 'BP_RollerSplineConveyor'
+    # vertical movement
     ELEVATOR = 'BP_Elevator2S'
     VERTICAL_CONVEYOR = 'BP_VerticalConveyor'
     
@@ -55,6 +61,11 @@ class ExternalDeviceClient(Node):
         self.model_name = ""
         self.payload_id = 0
 
+        # parameters, pub/sub/service
+        self.ros_api_settings()
+
+    def ros_api_settings(self):
+
         # common ROS parameters
         self.declare_parameter('debug', False)
         self.declare_parameter('enable_widget', True)
@@ -63,8 +74,7 @@ class ExternalDeviceClient(Node):
         self.declare_parameter('size', [1.0, 1.0, 1.0])
         self.declare_parameter('spawn_pose', [0.0, 0.0, 0.0, 0.0, 0.0, 0.0])
         self.declare_parameter('payload_spawn_pose', [0.0, 0.0, 3.0, 0.0, 0.0, 0.0])
-        self.declare_parameter('model_name', 'test')
-        self.declare_parameter('model_name2', 'test2')
+        self.declare_parameter('model_name', 'BP_Conveyor')
 
         # get model name
         self.model_name = self.get_parameter('model_name').value
@@ -72,6 +82,7 @@ class ExternalDeviceClient(Node):
             self.get_logger().error('You must provide valid model name as a ROS parameter')
             self.destroy_node() 
 
+        # service clients
         self.spawn_srv_client = self.create_client(SpawnEntity, '/SpawnEntity')
         while not self.spawn_srv_client.wait_for_service(timeout_sec=1.0):
             self.get_logger().error('SpawnEntity not available')

@@ -39,6 +39,15 @@ class ConveyorMode(Enum):
 class ConveyorClient(ExternalDeviceClient):
     def __init__(self, name, **kwargs):
         super().__init__(name, **kwargs)
+        
+        # spawn self and payload
+        namespace = self.get_namespace()
+        entity_name = namespace[1:len(namespace)] # remove / 
+        self.spawn_self(self.get_parameter('spawn_pose').value, entity_name, entity_name, '', self.json_parameters)
+        self.spawn_payload(ModelNames.PHYSICS_CUBE.value)
+
+    def ros_api_settings(self):
+        super().ros_api_settings()
 
         # parameters
         self.declare_parameter('speed', 1.0)
@@ -58,20 +67,15 @@ class ConveyorClient(ExternalDeviceClient):
         self.payload_status = False
         self.speed = self.get_parameter('speed').value
 
-        # spawn 
-        json_parameters = {
+        self.json_parameters = {
             'size': self.parse_size_param(),
             'speed': self.speed,
             'debug': self.get_parameter('debug').value,
             'mode': ConveyorMode.MOVE_TILL_HIT.value,
             'enable_widget': self.get_parameter('enable_widget').value,
             'disable_physics': self.get_parameter('disable_physics').value
-        }
-        namespace = self.get_namespace()
-        entity_name = namespace[1:len(namespace)]
-        self.spawn_self(self.get_parameter('spawn_pose').value, entity_name, entity_name, '', json_parameters)
-        self.spawn_payload(ModelNames.PHYSICS_CUBE.value)
-        
+        }        
+
     def entrances_cb(self, msg):
 
         entrance0 = msg.data[0]
