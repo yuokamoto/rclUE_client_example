@@ -17,10 +17,11 @@ from rclpy.node import Node
 from example_interfaces.msg import Int32, Float32, Int32MultiArray
 from geometry_msgs.msg import Pose, Quaternion
 
-from .common import ExternalDeviceClient, ModelNames, array_to_size_param
-
+from .common import ExternalDeviceClient, ModelNames, array_to_pose_param
+from .conveyor_client import ConveyorClient, ConveyorMode
 
 ##########################################################################################
+# WIP: there is issue to attach component with ROS Spawn
 # Conveyor Control client example
 #     1. Spawn conveyor with mode=1 and speed=1[m/s], i.e. payload will move and stop at exit
 #     2. Spawn Payload
@@ -35,19 +36,38 @@ class SplineConveyorClient(ConveyorClient):
     def __init__(self, name, **kwargs):
         super().__init__(name, **kwargs)
 
-
     def ros_api_settings(self):
         super().ros_api_settings()
 
         # parameters
-        self.declare_parameter('spline_points', [[], [], []])
+        # use str since array of array is not supported.
+        self.declare_parameter('points', "[\
+                                            '[0.0, 0.0, 0.0, 0.0, 0.0, 0.0]', \
+                                            '[1.0, 0.0, 0.0, 0.0, 0.0, 0.785]', \
+                                            '[2.0, 2.0, 0.0, 0.0, 0.0, 1.57]'\
+                                        ]"
+                            )
 
-        self.json_parameters['spline_points'] =  self.get_parameter('spline_points').value
+        self.json_parameters['points'] =  self.parse_points()
+    
+    def parse_points(self):
+        points_str = self.get_parameter('points').value
+        points = eval(points_str)
+        output = []
+        for p_str in points:
+            p = eval(p_str)
+            if len(p) == 6:
+                output.append(array_to_pose_param(p))
+            else:
+                self.get_logger().info('spline points length should be 6')
+        
+        print(output)
+        return output
 
 def main(args=None):
     rclpy.init(args=args)
 
-    conveyor_client = ConveyorClient('conveyor_client')
+    conveyor_client = SplineConveyorClient('conveyor_client')
 
     rclpy.spin(conveyor_client)
 

@@ -17,7 +17,7 @@ from rclpy.node import Node
 from example_interfaces.msg import Int32, Float32, Int32MultiArray
 from geometry_msgs.msg import Pose, Quaternion
 
-from .common import ExternalDeviceClient, ModelNames, array_to_size_param
+from .common import ExternalDeviceClient, ModelNames
 
 
 ##########################################################################################
@@ -39,6 +39,7 @@ class ConveyorMode(Enum):
 class ConveyorClient(ExternalDeviceClient):
     def __init__(self, name, **kwargs):
         super().__init__(name, **kwargs)
+        self.get_logger().info('TEST init in conv')
         
         # spawn self and payload
         namespace = self.get_namespace()
@@ -48,6 +49,7 @@ class ConveyorClient(ExternalDeviceClient):
 
     def ros_api_settings(self):
         super().ros_api_settings()
+        self.get_logger().info('TEST ros api setting in conv')
 
         # parameters
         self.declare_parameter('speed', 1.0)

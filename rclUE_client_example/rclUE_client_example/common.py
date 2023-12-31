@@ -24,8 +24,17 @@ import numpy as np
 import quaternion
 from enum import Enum
 
-def array_to_size_param(size):
-    return {'X': size[0], 'Y': size[1], 'Z': size[2]}
+def array_to_vector_param(in_array):
+    return {'X': in_array[0], 'Y': in_array[1], 'Z': in_array[2]}
+
+def array_to_rotation_param(in_array):
+    return {'Roll': in_array[0], 'Pitch': in_array[1], 'Yaw': in_array[2]}
+
+def array_to_pose_param(in_array):
+    return {
+        'position': array_to_vector_param(in_array[:3]), 
+        'rotation': array_to_rotation_param(in_array[3:])
+    }
 
 # UE assets name. This is specified in DefaultRapyutaSimSettings.ini
 class ModelNames(Enum):
@@ -57,6 +66,8 @@ class ModelNames(Enum):
 class ExternalDeviceClient(Node):
     def __init__(self, name, **kwargs):
         super().__init__(name, **kwargs)
+        self.get_logger().info('TEST init in common')
+
         self.future = None
         self.model_name = ""
         self.payload_id = 0
@@ -65,7 +76,7 @@ class ExternalDeviceClient(Node):
         self.ros_api_settings()
 
     def ros_api_settings(self):
-
+        self.get_logger().info('TEST ros api setting in common')
         # common ROS parameters
         self.declare_parameter('debug', False)
         self.declare_parameter('enable_widget', True)
@@ -95,7 +106,7 @@ class ExternalDeviceClient(Node):
 
     
     def parse_size_param(self):
-        return array_to_size_param(self.get_parameter('size').value)
+        return array_to_vector_param(self.get_parameter('size').value)
 
     def spawn_model(self, pose, model_name, name, namespace, tag, json_parameters):
         q = quaternion.from_euler_angles(pose[3], pose[4], pose[5])

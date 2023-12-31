@@ -1,17 +1,17 @@
 from launch import LaunchDescription
 from launch_ros.actions import Node
-
+import numpy as np
 def generate_launch_description():
     return LaunchDescription([
         Node(
             package='rclUE_client_example',
             name = 'client',
-            namespace = 'physics_conveyor',
-            executable='conveyor_client',
+            namespace = 'spline_physics_conveyor',
+            executable='spline_conveyor_client',
             output='screen',
             emulate_tty=True,
             parameters=[{
-                'debug': False,
+                'debug': True,
                 'enable_widget': True,
                 'disable_physics': False,
                 'mode': 0,
@@ -19,21 +19,23 @@ def generate_launch_description():
                 'spawn_pose': [0.0, 0.0, 0.0, 0.0, 0.0, 1.57],
                 'payload_spawn_pose': [0.0, 0.0, 3.0, 0.0, 0.0, 0.0],
                 'model_name': 'BP_BeltSplineConveyor',
-                'spline_points': [
-                    [],
-                    [],
-                    []
-                ]
-            }]
+                'points': "['[0.0, 0.0, 0.0, 0.0, 0.0, 0.0]', \
+                            '[1.0, 0.0, 0.0, 0.0, 0.0, -45]', \
+                            '[2.0, 1.0, 0.0, 0.0, 0.0, -45]', \
+                            '[2.0, 2.0, 0.0, 0.0, 0.0, -90]' \
+                        ]"
+                # use str since array of array is not supported.
+                # x, y, z, roll, pitch, yaw
+            }] 
 
         ),
         Node(
             package='rclUE_client_example',
             name = 'client',
-            namespace = 'non_physics_conveyor',
-            executable='conveyor_client',
+            namespace = 'spline_non_physics_conveyor',
+            executable='spline_conveyor_client',
             output='screen',
-            
+            emulate_tty=True,
             parameters=[{
                 'debug': False,
                 'enable_widget': True,
@@ -43,11 +45,11 @@ def generate_launch_description():
                 'spawn_pose': [0.0, 3.0, 0.0, 0.0, 0.0, 0.0],
                 'payload_spawn_pose': [0.0, 3.0, 3.0, 0.0, 0.0, 0.0],
                 'model_name': 'BP_RollerSplineConveyor',
-                'spline_points': [
-                    [],
-                    [],
-                    []
-                ]
+                'points': "['[0.0, 0.0, 0.0, 0.0, 0.0, 0.0]', \
+                            '[2.0, 0.0, 0.0, 0.0, 0.0, 45]', \
+                            '[4.0, -2.0, 0.0, 0.0, 0.0, 45]', \
+                            '[4.0, -4.0, 0.0, 0.0, 0.0, 90]' \
+                        ]"
 
             }]
         )

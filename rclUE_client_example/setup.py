@@ -25,6 +25,7 @@ setup(
     entry_points={
         'console_scripts': [
                 'conveyor_client = rclUE_client_example.conveyor_client:main',
+                'spline_conveyor_client = rclUE_client_example.spline_conveyor_client:main',
         ],
     },
 )
