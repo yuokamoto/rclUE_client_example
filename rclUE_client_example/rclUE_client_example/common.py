@@ -24,17 +24,32 @@ import numpy as np
 import quaternion
 from enum import Enum
 
-def array_to_size_param(size):
-    return {'X': size[0], 'Y': size[1], 'Z': size[2]}
+def array_to_vector_param(in_array):
+    return {'X': in_array[0], 'Y': in_array[1], 'Z': in_array[2]}
+
+def array_to_rotation_param(in_array):
+    return {'Roll': in_array[0], 'Pitch': in_array[1], 'Yaw': in_array[2]}
+
+def array_to_pose_param(in_array):
+    return {
+        'position': array_to_vector_param(in_array[:3]), 
+        'rotation': array_to_rotation_param(in_array[3:])
+    }
 
 # UE assets name. This is specified in DefaultRapyutaSimSettings.ini
 class ModelNames(Enum):
+    # payload
     PHYSICS_CUBE = 'BP_PhysicsCube'
     NON_PHYSICS_CUBE = 'BP_NonPhysicsCube'
+    # conveyor
     CONVEYOR = 'BP_Conveyor'
     BELT_CONVEYOR = 'BP_BeltConveyor'
     ROLLER_CONVEYOR = 'BP_RollerConveyor'
-    SPLINE_CONVEYOR = 'BP_Spline_Conveyor'
+    # spline conveyor
+    SPLINE_CONVEYOR = 'BP_SplineConveyor'
+    BELT_SPLINE_CONVEYOR = 'BP_BeltSplineConveyor'
+    ROLLER_SPLINE_CONVEYOR = 'BP_RollerSplineConveyor'
+    # vertical movement
     ELEVATOR = 'BP_Elevator2S'
     VERTICAL_CONVEYOR = 'BP_VerticalConveyor'
     
@@ -51,10 +66,17 @@ class ModelNames(Enum):
 class ExternalDeviceClient(Node):
     def __init__(self, name, **kwargs):
         super().__init__(name, **kwargs)
+        self.get_logger().info('TEST init in common')
+
         self.future = None
         self.model_name = ""
         self.payload_id = 0
 
+        # parameters, pub/sub/service
+        self.ros_api_settings()
+
+    def ros_api_settings(self):
+        self.get_logger().info('TEST ros api setting in common')
         # common ROS parameters
         self.declare_parameter('debug', False)
         self.declare_parameter('enable_widget', True)
@@ -63,8 +85,7 @@ class ExternalDeviceClient(Node):
         self.declare_parameter('size', [1.0, 1.0, 1.0])
         self.declare_parameter('spawn_pose', [0.0, 0.0, 0.0, 0.0, 0.0, 0.0])
         self.declare_parameter('payload_spawn_pose', [0.0, 0.0, 3.0, 0.0, 0.0, 0.0])
-        self.declare_parameter('model_name', 'test')
-        self.declare_parameter('model_name2', 'test2')
+        self.declare_parameter('model_name', 'BP_Conveyor')
 
         # get model name
         self.model_name = self.get_parameter('model_name').value
@@ -72,6 +93,7 @@ class ExternalDeviceClient(Node):
             self.get_logger().error('You must provide valid model name as a ROS parameter')
             self.destroy_node() 
 
+        # service clients
         self.spawn_srv_client = self.create_client(SpawnEntity, '/SpawnEntity')
         while not self.spawn_srv_client.wait_for_service(timeout_sec=1.0):
             self.get_logger().error('SpawnEntity not available')
@@ -84,7 +106,7 @@ class ExternalDeviceClient(Node):
 
     
     def parse_size_param(self):
-        return array_to_size_param(self.get_parameter('size').value)
+        return array_to_vector_param(self.get_parameter('size').value)
 
     def spawn_model(self, pose, model_name, name, namespace, tag, json_parameters):
         q = quaternion.from_euler_angles(pose[3], pose[4], pose[5])
