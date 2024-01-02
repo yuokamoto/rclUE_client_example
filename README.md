@@ -11,7 +11,7 @@ Please check following as well
 ## How to use
 ### Setup UE project
 1. Download Unreal Engine 5 and set up [rclUE-Examples](https://github.com/yuokamoto/rclUE-Examples/tree/main/Config) by following README of the repo.
-2. Open Default map and play
+2. Open Default/Character map and play
 
 ### Setup and run ROS2 ws project
 1. Install ROS 2 by following https://docs.ros.org/en/humble/Installation/Ubuntu-Install-Debians.html 
@@ -44,6 +44,15 @@ Please check following as well
     5. Set speed=-200.
     5. Wait until paylod move out.
     6. Repeat from step 1
-- Spline Conveyor
-- Elevator
-- VerticalConveyor
+- Character
+    1. Spawn character with all modes,
+        0. manual mode. Move when it subscribes goal. Goal can be pose or actor name.
+        1. sequence mode. Move to goal sequence one by one
+        2. random sequence mode. Move to goal sequence randomly
+        3. random area mode. Move inside bounding box randomly.
+
+        Please check paramters in `character_client.py` and `character_client_launch.py`
+    2. keep sending random goal to manual mode(=0) cahracter. Other characters move with
+- Spline Conveyor: todo
+- Elevator: todo
+- VerticalConveyor: todo
