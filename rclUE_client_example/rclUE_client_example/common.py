@@ -66,7 +66,6 @@ class ModelNames(Enum):
 class ExternalDeviceClient(Node):
     def __init__(self, name, **kwargs):
         super().__init__(name, **kwargs)
-        self.get_logger().info('TEST init in common')
 
         self.future = None
         self.model_name = ""
@@ -76,7 +75,6 @@ class ExternalDeviceClient(Node):
         self.ros_api_settings()
 
     def ros_api_settings(self):
-        self.get_logger().info('TEST ros api setting in common')
         # common ROS parameters
         self.declare_parameter('debug', False)
         self.declare_parameter('enable_widget', True)
@@ -128,7 +126,7 @@ class ExternalDeviceClient(Node):
         req.tags = [tag]
         req.json_parameters = json.dumps(json_parameters)
 
-        self.get_logger().info('Send spawn request of {}'.format(name))
+        self.get_logger().info('Send spawn request of {}, request: \n {}'.format(name, req))
         self.future = self.spawn_srv_client.call_async(req)
 
         def cb(future):

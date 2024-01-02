@@ -26,6 +26,7 @@ setup(
         'console_scripts': [
                 'conveyor_client = rclUE_client_example.conveyor_client:main',
                 'spline_conveyor_client = rclUE_client_example.spline_conveyor_client:main',
+                'character_client = rclUE_client_example.character_client:main'
         ],
     },
 )
