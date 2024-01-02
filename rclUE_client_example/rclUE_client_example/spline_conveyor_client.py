@@ -61,7 +61,6 @@ class SplineConveyorClient(ConveyorClient):
             else:
                 self.get_logger().info('spline points length should be 6')
         
-        print(output)
         return output
 
 def main(args=None):
