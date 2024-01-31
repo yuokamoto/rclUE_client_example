@@ -106,6 +106,36 @@ class ExternalDeviceClient(Node):
     def parse_size_param(self):
         return array_to_vector_param(self.get_parameter('size').value)
 
+    def parse_point_sequence(self, points_str):
+        points = eval(points_str)
+        output = []
+        for p_str in points:
+            try: # if it given as coordinate
+                p = eval(p_str)
+                if len(p) == 3:
+                    output.append({'position': array_to_vector_param(p)})
+                else:
+                    self.get_logger().info('points length should be 3')
+            except:  # if it given as actor name
+                output.append({'name': p_str})
+        
+        return output
+    
+    def load_pose_sequence(self, points_str):
+        points = eval(points_str)
+        output = []
+        for p_str in points:
+            try: # if it given as coordinate
+                p = eval(p_str)
+                if len(p) == 6:
+                    output.append(p)
+                else:
+                    self.get_logger().info('points length should be 3')
+            except:
+                continue
+        
+        return output
+
     def spawn_model(self, pose, model_name, name, namespace, tag, json_parameters):
         q = quaternion.from_euler_angles(pose[3], pose[4], pose[5])
         initial_pose = Pose()

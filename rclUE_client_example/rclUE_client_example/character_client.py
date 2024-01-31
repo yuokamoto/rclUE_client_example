@@ -77,7 +77,7 @@ class CharacterClient(ExternalDeviceClient):
             'mode': self.mode,
             'enable_widget': self.get_parameter('enable_widget').value,
             'origin': self.parse_origin(),
-            'goal_sequence': self.parse_goal_sequence(),
+            'goal_sequence': self.parse_point_sequence(self.get_parameter('goal_sequence').value),
             'random_move_bounding_box': array_to_vector_param(self.get_parameter('random_move_bounding_box').value),
         }        
 
@@ -89,22 +89,6 @@ class CharacterClient(ExternalDeviceClient):
                 return array_to_pose_param(origin_list)
         except: # if it given as actor name
             return origin_str
-
-    def parse_goal_sequence(self):
-        points_str = self.get_parameter('goal_sequence').value
-        points = eval(points_str)
-        output = []
-        for p_str in points:
-            try: # if it given as coordinate
-                p = eval(p_str)
-                if len(p) == 3:
-                    output.append({'position': array_to_vector_param(p)})
-                else:
-                    self.get_logger().info('spline points length should be 3')
-            except:  # if it given as actor name
-                output.append({'name': p_str})
-        
-        return output
 
     def status_cb(self, msg):
         if msg.data == 0: # reached goal
