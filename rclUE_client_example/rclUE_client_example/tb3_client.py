@@ -44,14 +44,15 @@ class TB3Client(ExternalDeviceClient):
 
         # spawn self and payload
         namespace = self.get_namespace()
-        entity_name = namespace[1:len(namespace)] # remove /
-        # self.spawn_self(self.get_parameter('spawn_pose').value, entity_name, entity_name, '', self.json_parameters)
-
-        self.timer = self.create_timer(1, self.spin)
+        entity_name = self.get_parameter('robot_name').value
+        if entity_name == '':
+            entity_name = namespace[1:len(namespace)] # remove /
+        self.spawn_self(self.get_parameter('spawn_pose').value, entity_name, namespace, '', self.json_parameters)
 
     def ros_api_settings(self):
         super().ros_api_settings()
 
+        self.declare_parameter('robot_name', 'tb3')
         self.declare_parameter('map_origin', 'map')
         self.declare_parameter('goal_sequence', '[]')
 
@@ -68,6 +69,8 @@ class TB3Client(ExternalDeviceClient):
         self.initial_pose.pose.pose.orientation.y = q.y
         self.initial_pose.pose.pose.orientation.z = q.z
         self.initial_pose.pose.pose.orientation.w = q.w
+        self.initial_pose.pose.covariance[0] = self.initial_pose.pose.covariance[7] = 0.25
+        self.initial_pose.pose.covariance[35] = 0.06853891909122467
         
         self.goals = self.load_pose_sequence(self.get_parameter('goal_sequence').value)
         self.current_goal_index = 0
@@ -100,6 +103,7 @@ class TB3Client(ExternalDeviceClient):
     def send_goal(self):
         print('sendgoal', self.initialized)
         if not self.initialized:
+            self.initial_pose.header.stamp = self.get_clock().now().to_msg()
             self._initial_pose_publisher.publish(self.initial_pose)
             return False
 
@@ -119,28 +123,25 @@ class TB3Client(ExternalDeviceClient):
         self._action_client.wait_for_server()
 
         self.get_logger().info(('Navigating to goal: '))
-        print(goal_msg)
 
         send_goal_future = self._action_client.send_goal_async(goal_msg, self.feedback_cb)
-        print('test0')
 
         res = rclpy.spin_until_future_complete(self, send_goal_future, timeout_sec=1.0)
-        print('test01', send_goal_future.result())
         self.goal_handle = send_goal_future.result()
 
         if not self.goal_handle.accepted:
             self.get_logger().error('Goal was rejected!')
             return False
 
-        print('test')
         result_future = self.goal_handle.get_result_async()
-        print('test2')
 
         rclpy.spin_until_future_complete(self, result_future)
-        print('test3')
-        self.get_logger().info(('Navigation completed: ' + result_future.result().status))
+        self.get_logger().info(('Navigation completed: ' + str(result_future.result().status)))
         
-        self.current_goal_index += 1
+        if len(self.goals) <= self.current_goal_index:
+            self.current_goal = 0
+        else:
+            self.current_goal_index += 1
 
         return True
 
@@ -160,20 +161,21 @@ class TB3Client(ExternalDeviceClient):
         
         return output
     
-    def feedback_cb(self):
+    def feedback_cb(self, msg):
         pass
 
-    def spin(self):
-        self.send_goal()
-
-    
 
 def main(args=None):
     rclpy.init(args=args)
 
     tb3_client = TB3Client('tb3_client')
 
-    rclpy.spin(tb3_client)
+    while rclpy.ok():
+        res = tb3_client.send_goal()
+        print('test0', res)
+        rclpy.spin_once(tb3_client)
+        print('test1', res)
+        time.sleep(1)
 
     tb3_client.destroy_node()
     rclpy.shutdown()
