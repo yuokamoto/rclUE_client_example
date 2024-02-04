@@ -36,7 +36,15 @@ Please check following as well
 
 *Client script will do following from ROS 2 interface
 
-- Conveyor
+- Turtlebot3(`tb3_client_launch.py`)
+
+    *need to open `Turltbot3_benchmark.umap`
+
+    1. Spawn turtlebot3 and start tb3_simulation_launch.py which start navigation action server
+    2. Send /initial_pose
+    3. Send navigation goal.
+
+- Conveyor(`conveyor_client_launch.py`)
     1. Spawn conveyor with mode=1 and speed=200, i.e. payload will move and stop at entrance/exit
     2. Spawn Payload
     3. Wait until payload stop at entrance/exit
@@ -44,7 +52,7 @@ Please check following as well
     5. Set speed=-200.
     5. Wait until paylod move out.
     6. Repeat from step 1
-- Character
+- Characte(`charcter_client_launch.py`)
     1. Spawn character with all modes,
         0. manual mode. Move when it subscribes goal. Goal can be pose or actor name.
         1. sequence mode. Move to goal sequence one by one
