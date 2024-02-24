@@ -18,7 +18,7 @@ from rclpy.node import Node
 from example_interfaces.msg import Int32, Float32, Int32MultiArray
 from geometry_msgs.msg import PoseStamped, Quaternion
 
-from .common import ExternalDeviceClient, ModelNames, array_to_vector_param, array_to_pose_param
+from .common import ExternalDeviceClient, ModelNames, AIMoveMode, array_to_vector_param, array_to_pose_param
 
 
 ##########################################################################################
@@ -28,12 +28,6 @@ from .common import ExternalDeviceClient, ModelNames, array_to_vector_param, arr
 ##########################################################################################
 
 from enum import Enum
-class CharacterMode(Enum):
-    MANUAL = 0
-    SEQUENCE = 1
-    RANDOM_SPOTS = 2
-    RANDOM_AREA = 3
-
 class CharacterMoveStatus(Enum):
     IDLE = 0
     MOVING = 1
@@ -61,7 +55,7 @@ class CharacterClient(ExternalDeviceClient):
         self.manual_goal_publisher_ = self.create_publisher(PoseStamped, 'pose_goal', 10)
         self.status_subscription = self.create_subscription(
             Int32,
-            'move_status',
+            'nav_status',
             self.status_cb,
             10)
         self.status_subscription  # prevent unused variable warning
@@ -91,8 +85,8 @@ class CharacterClient(ExternalDeviceClient):
             return origin_str
 
     def status_cb(self, msg):
-        if msg.data == 0: # reached goal
-            if self.mode == 0: # manual mode
+        if msg.data == CharacterMoveStatus.IDLE.value: # reached goal
+            if self.mode == AIMoveMode.MANUAL.value: # manual mode
                 goal = PoseStamped()
                 goal.header.frame_id: 'MapOrigin' # map origin actor name. If the actor does not exist, origin will become world origin
                 goal.pose.position.x = random.uniform(-10, 10)
