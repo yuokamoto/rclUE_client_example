@@ -25,10 +25,10 @@ import quaternion
 from enum import Enum
 
 def array_to_vector_param(in_array):
-    return {'X': in_array[0], 'Y': in_array[1], 'Z': in_array[2]}
+    return {'x': in_array[0], 'y': in_array[1], 'z': in_array[2]}
 
 def array_to_rotation_param(in_array):
-    return {'Roll': in_array[0], 'Pitch': in_array[1], 'Yaw': in_array[2]}
+    return {'roll': in_array[0], 'pitch': in_array[1], 'yaw': in_array[2]}
 
 def array_to_pose_param(in_array):
     return {
@@ -61,7 +61,15 @@ class ModelNames(Enum):
         else:
             raise ValueError(f"'{cls.__name__}' enum not found for '{value}'")
 
+class AIMoveMode(Enum):
+    BEGIN = 0
 
+    MANUAL          = 1
+    SEQUENCE        = 2
+    RANDOM_SEQUENCE = 3
+    RANDOM_AREA     = 4
+
+    END             = 100
 
 class ExternalDeviceClient(Node):
     def __init__(self, name, **kwargs):
@@ -112,10 +120,15 @@ class ExternalDeviceClient(Node):
         for p_str in points:
             try: # if it given as coordinate
                 p = eval(p_str)
-                if len(p) == 3:
-                    output.append({'position': array_to_vector_param(p)})
+                if len(p) == 6:
+                    output.append({
+                        'pose': {
+                           'position': array_to_vector_param(p[0:3]),
+                           'orientation': array_to_rotation_param(p[3:6])
+                        }
+                    })
                 else:
-                    self.get_logger().info('points length should be 3')
+                    self.get_logger().info('points length should be 6')
             except:  # if it given as actor name
                 output.append({'name': p_str})
         
