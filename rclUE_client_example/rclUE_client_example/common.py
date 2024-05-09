@@ -78,12 +78,14 @@ class ExternalDeviceClient(Node):
         self.future = None
         self.model_name = ""
         self.payload_id = 0
+        self.spawn = True
 
         # parameters, pub/sub/service
         self.ros_api_settings()
 
     def ros_api_settings(self):
         # common ROS parameters
+        self.declare_parameter('spawn', True)
         self.declare_parameter('debug', False)
         self.declare_parameter('enable_widget', True)
         self.declare_parameter('disable_physics', False)
@@ -93,22 +95,24 @@ class ExternalDeviceClient(Node):
         self.declare_parameter('payload_spawn_pose', [0.0, 0.0, 3.0, 0.0, 0.0, 0.0])
         self.declare_parameter('model_name', 'BP_Conveyor')
 
+        self.spawn = self.get_parameter('spawn').value
         # get model name
         self.model_name = self.get_parameter('model_name').value
         if self.model_name == '':
             self.get_logger().error('You must provide valid model name as a ROS parameter')
             self.destroy_node() 
 
-        # service clients
-        self.spawn_srv_client = self.create_client(SpawnEntity, '/SpawnEntity')
-        while not self.spawn_srv_client.wait_for_service(timeout_sec=1.0):
-            self.get_logger().error('SpawnEntity not available')
-            self.destroy_node() 
-        
-        self.delete_srv_client = self.create_client(DeleteEntity, '/DeleteEntity')
-        while not self.delete_srv_client.wait_for_service(timeout_sec=1.0):
-            self.get_logger().error('DeleteEntity not available')
-            self.destroy_node() 
+        if self.spawn:
+            # service clients
+            self.spawn_srv_client = self.create_client(SpawnEntity, '/SpawnEntity')
+            while not self.spawn_srv_client.wait_for_service(timeout_sec=1.0):
+                self.get_logger().error('SpawnEntity not available')
+                self.destroy_node() 
+            
+            self.delete_srv_client = self.create_client(DeleteEntity, '/DeleteEntity')
+            while not self.delete_srv_client.wait_for_service(timeout_sec=1.0):
+                self.get_logger().error('DeleteEntity not available')
+                self.destroy_node() 
 
     
     def parse_size_param(self):

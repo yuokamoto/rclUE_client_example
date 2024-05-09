@@ -44,7 +44,8 @@ class ConveyorClient(ExternalDeviceClient):
         # spawn self and payload
         namespace = self.get_namespace()
         entity_name = namespace[1:len(namespace)] # remove / 
-        self.spawn_self(self.get_parameter('spawn_pose').value, entity_name, entity_name, '', self.json_parameters)
+        self.spawn:
+            self.spawn_self(self.get_parameter('spawn_pose').value, entity_name, entity_name, '', self.json_parameters)
         self.spawn_payload(ModelNames.PHYSICS_CUBE.value)
 
     def ros_api_settings(self):

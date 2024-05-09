@@ -9,7 +9,7 @@ def generate_launch_description():
             package='rclUE_client_example',
             name = 'ROSCharacter0',
             namespace = 'manual_chracter',
-            executable='character_client',
+            executable='ai_actor_client',
             output='screen',
             emulate_tty=True,
             parameters=[{
@@ -27,7 +27,7 @@ def generate_launch_description():
             package='rclUE_client_example',
             name = 'ROSCharacter1',
             namespace = 'sequence_moving_chracter',
-            executable='character_client',
+            executable='ai_actor_client',
             output='screen',
             emulate_tty=True,
             parameters=[{
@@ -53,7 +53,7 @@ def generate_launch_description():
             package='rclUE_client_example',
             name = 'ROSCharacter2',
             namespace = 'random_sequence_moving_chracter',
-            executable='character_client',
+            executable='ai_actor_client',
             output='screen',
             emulate_tty=True,
             parameters=[{
@@ -79,7 +79,7 @@ def generate_launch_description():
             package='rclUE_client_example',
             name = 'ROSCharacter3',
             namespace = 'random_area_moving_chracter',
-            executable='character_client',
+            executable='ai_actor_client',
             output='screen',
             emulate_tty=True,
             parameters=[{

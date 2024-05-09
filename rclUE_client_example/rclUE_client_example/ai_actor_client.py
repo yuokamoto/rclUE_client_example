@@ -32,14 +32,15 @@ class CharacterMoveStatus(Enum):
     IDLE = 0
     MOVING = 1
 
-class CharacterClient(ExternalDeviceClient):
+class AIControlledActorClient(ExternalDeviceClient):
     def __init__(self, name, **kwargs):
         super().__init__(name, **kwargs)
         
         # spawn self and payload
         namespace = self.get_namespace()
         entity_name = namespace[1:len(namespace)] # remove / 
-        self.spawn_self(self.get_parameter('spawn_pose').value, entity_name, entity_name, '', self.json_parameters)
+        self.spawn:
+            self.spawn_self(self.get_parameter('spawn_pose').value, entity_name, entity_name, '', self.json_parameters)
 
     def ros_api_settings(self):
         super().ros_api_settings()
@@ -99,11 +100,11 @@ class CharacterClient(ExternalDeviceClient):
 def main(args=None):
     rclpy.init(args=args)
 
-    Character_client = CharacterClient('Character_client')
+    ai_controlled_actor_client = AIControlledActorClient('ai_controlled_actor_client')
 
-    rclpy.spin(Character_client)
+    rclpy.spin(ai_controlled_actor_client)
 
-    Character_client.destroy_node()
+    ai_controlled_actor_client.destroy_node()
     rclpy.shutdown()
 
 

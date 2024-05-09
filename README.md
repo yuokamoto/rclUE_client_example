@@ -30,6 +30,8 @@ Please check following as well
     source /opt/ros/<ros-distro>/setup.bash
     source colcon_ws/install/setup.bash
     ros2 run rclUE_client_example <example package name, e.g. conveyor_client>
+    # or
+    ros2 launch rclUE_client_example <example launch name, e.g. conveyor_client>
     ```
 
 ## List of examples
@@ -59,7 +61,7 @@ Please check following as well
         2. random sequence mode. Move to goal sequence randomly
         3. random area mode. Move inside bounding box randomly.
 
-        Please check paramters in `character_client.py` and `character_client_launch.py`
+        Please check paramters in `ai_actor_client.py` and `ai_actor_client_launch.py`
     2. keep sending random goal to manual mode(=0) cahracter. Other characters move with
 - Spline Conveyor: todo
 - Elevator: todo
