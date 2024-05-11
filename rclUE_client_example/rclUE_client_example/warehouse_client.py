@@ -20,6 +20,7 @@ from geometry_msgs.msg import PoseStamped, Quaternion
 
 from .common import ExternalDeviceClient, ModelNames, AIMoveMode, array_to_vector_param, array_to_pose_param
 
+from .ai_actor_client import AIControlledActorClient, AITaskType, AINavigationStatus
 
 ##########################################################################################
 # Character Control client example
@@ -31,33 +32,98 @@ from .common import ExternalDeviceClient, ModelNames, AIMoveMode, array_to_vecto
 class WarehouseClient(Node):
     def __init__(self, name, **kwargs):
         super().__init__(name, **kwargs)
+
+        self.task_list = {}
+        self.agent_list = []
+        # todo handle non agent list tasks
+
         self.ros_api_settings()
         self.parse_csv()
-        timer_period = 0.5  # seconds
+
+        timer_period = 1  # seconds
         self.timer = self.create_timer(timer_period, self.process_order)
+
+    #     self.status_subscription = self.create_subscription(
+    #         Int32,
+    #         'nav_status',
+    #         self.status_cb,
+    #         10)
+    #     self.status_subscription  # prevent unused variable warning
+    
+    # def status_cb(self, msg):
+    #     print('status_cb in WarehouseClient', msg.data)
 
     def ros_api_settings(self):
         pass
 
     def parse_csv(self):
-        pass
+        self.agent_list.append(AIControlledActorClient('AIControlledActorClient', spawn=False, namespace='BP_ROSCharacter14'))
+        self.task_list['BP_ROSCharacter14'] = [
+            {
+                'task_id': 'task_1',
+                'task_type': 'Pick', 
+                # 'goal_location': [],
+                # 'goal_orientation': []
+                'goal_actor': 'BP_Cart',
+                # 'approach_location':[]
+                # 'approach_actor':
+                'use_default_apporach_location': True
+            },
+            {
+                'task_id': 'task_2',
+                'task_type': 'Drop', 
+                'goal_actor': 'DropPoint',
+                'approach_actor': 'ApproachPoint2'
+            }
+            
+        ]
         # load csv
         # parse csv to dict
         # create task list for agents
         # create pub/sub
     
     def process_order(self):
-        pass
+        print('process_order', len(self.agent_list))
+        for agent in self.agent_list:
+            rclpy.spin_once(agent, timeout_sec=0.001)
+            if agent.task_status == AITaskType.NONE.value and agent.nav_status == AINavigationStatus.IDLE.value:
+                #todo check task dependency 
+                task = self.task_list[agent.entity_name].pop(0)
+                if 'task_type' not in task:
+                    print('task_type not found in task {}'.format(task['task_id'] if 'task_id' in task else 'None'))
+                    continue
+                if task['task_type'] == 'Pick':
+                    pass
+                elif task['task_type'] == 'Drop':
+                    pass
+                else task['task_type'] == 'Move':
+                    pass
+                
+
+            # check task is none and navigation is none
+            # if task is none then assign task
+
+
+        # time.sleep(1)
+        
 
 def main(args=None):
     rclpy.init(args=args)
 
     warehouse_client = WarehouseClient('warehouse_client')
+    warehouse_client.process_order()
 
-    rclpy.spin(warehouse_client)
+    try:
+        rclpy.spin(warehouse_client)
+    except KeyboardInterrupt:
+        pass
 
     warehouse_client.destroy_node()
-    rclpy.shutdown()
+
+    try:
+        rclpy.shutdown()
+    except rclpy._rclpy_pybind11.RCLError:
+        pass
 
 
 if __name__ == '__main__':

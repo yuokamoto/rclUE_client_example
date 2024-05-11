@@ -32,15 +32,23 @@ class CharacterMoveStatus(Enum):
     IDLE = 0
     MOVING = 1
 
+class AITaskType(Enum):
+    NONE      = 'None'
+    PICK      = 'Pick'
+    DROP      = 'Drop'
+
+class AINavigationStatus(Enum): #same as defined in RRAIRobotROSController.h
+    IDLE UMETA      = 0
+    AI_MOVING       = 1
+    LINEAR_MOVING   = 2
+    ROTATING        = 3
+
+
 class AIControlledActorClient(ExternalDeviceClient):
-    def __init__(self, name, **kwargs):
-        super().__init__(name, **kwargs)
-        
-        # spawn self and payload
-        namespace = self.get_namespace()
-        entity_name = namespace[1:len(namespace)] # remove / 
-        self.spawn:
-            self.spawn_self(self.get_parameter('spawn_pose').value, entity_name, entity_name, '', self.json_parameters)
+    def __init__(self, name, spawn=True, **kwargs):        
+        super().__init__(name, spawn, **kwargs)
+        self.nav_status = AINavigationStatus.IDLE.value
+        self.task_status = AITaskType.NONE.value
 
     def ros_api_settings(self):
         super().ros_api_settings()
@@ -50,16 +58,25 @@ class AIControlledActorClient(ExternalDeviceClient):
         self.declare_parameter('origin', 'MapOrigin')
         self.declare_parameter('goal_sequence', "[]")
         self.declare_parameter('random_move_bounding_box', [0.0, 0.0, 0.0])
+
+        self.declare_parameter('random_move_by_ros', False) #example usage of client
+        self.random_move_by_ros = self.get_parameter('random_move_by_ros').value
         
         # pub/sub
         self.mode_publisher_ = self.create_publisher(Int32, 'set_mode', 10)
         self.manual_goal_publisher_ = self.create_publisher(PoseStamped, 'pose_goal', 10)
-        self.status_subscription = self.create_subscription(
+        self.nav_status_subscription = self.create_subscription(
             Int32,
             'nav_status',
-            self.status_cb,
+            self.nav_status_cb,
             10)
-        self.status_subscription  # prevent unused variable warning
+        self.nav_status_subscription  # prevent unused variable warning
+        self.task_status_subscription = self.create_subscription(
+            Int32,
+            'task_status',
+            self.task_status_cb,
+            10)
+        self.task_status_subscription  # prevent unused variable warning
 
         # default values
         self.mode = self.get_parameter('mode').value
@@ -85,8 +102,10 @@ class AIControlledActorClient(ExternalDeviceClient):
         except: # if it given as actor name
             return origin_str
 
-    def status_cb(self, msg):
-        if msg.data == CharacterMoveStatus.IDLE.value: # reached goal
+    def nav_status_cb(self, msg):
+        self.nav_status = msg.data
+        print('status_cb in AIControlledActorClient', msg.data)
+        if msg.data == CharacterMoveStatus.IDLE.value and self.random_move_by_ros: # reached goal
             if self.mode == AIMoveMode.MANUAL.value: # manual mode
                 goal = PoseStamped()
                 goal.header.frame_id: 'MapOrigin' # map origin actor name. If the actor does not exist, origin will become world origin
@@ -96,6 +115,8 @@ class AIControlledActorClient(ExternalDeviceClient):
                 self.manual_goal_publisher_.publish(goal)
                 self.get_logger().info('send manual goal to {}'.format(goal))
 
+    def task_status_cb(self, msg):
+        self.task_status = msg.data
 
 def main(args=None):
     rclpy.init(args=args)

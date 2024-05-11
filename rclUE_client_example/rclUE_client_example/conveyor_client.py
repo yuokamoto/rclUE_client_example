@@ -39,18 +39,11 @@ class ConveyorMode(Enum):
 class ConveyorClient(ExternalDeviceClient):
     def __init__(self, name, **kwargs):
         super().__init__(name, **kwargs)
-        self.get_logger().info('TEST init in conv')
         
-        # spawn self and payload
-        namespace = self.get_namespace()
-        entity_name = namespace[1:len(namespace)] # remove / 
-        self.spawn:
-            self.spawn_self(self.get_parameter('spawn_pose').value, entity_name, entity_name, '', self.json_parameters)
         self.spawn_payload(ModelNames.PHYSICS_CUBE.value)
 
     def ros_api_settings(self):
         super().ros_api_settings()
-        self.get_logger().info('TEST ros api setting in conv')
 
         # parameters
         self.declare_parameter('speed', 1.0)

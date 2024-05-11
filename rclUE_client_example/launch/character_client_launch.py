@@ -19,7 +19,8 @@ def generate_launch_description():
                 'spawn_pose': [0.0, -15.0, 0.88, 0.0, 0.0, 1.57],
                 'acceptance_radius': 0.1,
                 'speed': 5.0,
-                'model_name': 'BP_ROSCharacter'
+                'model_name': 'BP_ROSCharacter',
+                'random_move_by_ros': True
             }]
 
         ),

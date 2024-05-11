@@ -72,20 +72,27 @@ class AIMoveMode(Enum):
     END             = 100
 
 class ExternalDeviceClient(Node):
-    def __init__(self, name, **kwargs):
+    def __init__(self, name, spawn=True, **kwargs):
         super().__init__(name, **kwargs)
-
         self.future = None
         self.model_name = ""
         self.payload_id = 0
-        self.spawn = True
+        self.reference_frame = ''
+        self.spawn = spawn
 
         # parameters, pub/sub/service
         self.ros_api_settings()
 
+        # spawn self
+        namespace = self.get_namespace()
+        self.entity_name = namespace[1:len(namespace)] # remove / 
+        if self.spawn:
+            self.spawn_self(self.get_parameter('spawn_pose').value, self.entity_name, self.entity_name, '', self.json_parameters)
+
     def ros_api_settings(self):
         # common ROS parameters
-        self.declare_parameter('spawn', True)
+        self.declare_parameter('spawn', self.spawn)
+        self.declare_parameter('reference_frame', self.reference_frame)
         self.declare_parameter('debug', False)
         self.declare_parameter('enable_widget', True)
         self.declare_parameter('disable_physics', False)
@@ -96,6 +103,7 @@ class ExternalDeviceClient(Node):
         self.declare_parameter('model_name', 'BP_Conveyor')
 
         self.spawn = self.get_parameter('spawn').value
+        self.reference_frame = self.get_parameter('reference_frame').value
         # get model name
         self.model_name = self.get_parameter('model_name').value
         if self.model_name == '':
@@ -170,6 +178,7 @@ class ExternalDeviceClient(Node):
         req.state = EntityState()
         req.state.name = name
         req.state.pose = initial_pose
+        req.state.reference_frame = self.reference_frame 
         req.tags = [tag]
         req.json_parameters = json.dumps(json_parameters)
 
