@@ -15,8 +15,8 @@ import time
 import random
 import rclpy
 from rclpy.node import Node
-from example_interfaces.msg import Int32, Float32, Int32MultiArray
-from geometry_msgs.msg import PoseStamped, Quaternion
+from example_interfaces.msg import Int32, Float32, Int32MultiArray, String, Bool
+from geometry_msgs.msg import PoseStamped, Quaternion, PointStamped, Pose, Point
 
 from .common import ExternalDeviceClient, ModelNames, AIMoveMode, array_to_vector_param, array_to_pose_param
 
@@ -29,7 +29,7 @@ from .common import ExternalDeviceClient, ModelNames, AIMoveMode, array_to_vecto
 
 from enum import Enum
 class CharacterMoveStatus(Enum):
-    IDLE = 0
+    IDLE   = 0
     MOVING = 1
 
 class AITaskType(Enum):
@@ -37,8 +37,9 @@ class AITaskType(Enum):
     PICK      = 'Pick'
     DROP      = 'Drop'
 
-class AINavigationStatus(Enum): #same as defined in RRAIRobotROSController.h
-    IDLE UMETA      = 0
+# same as defined in RRAIRobotROSController.h
+class AINavigationStatus(Enum):
+    IDLE            = 0
     AI_MOVING       = 1
     LINEAR_MOVING   = 2
     ROTATING        = 3
@@ -53,18 +54,36 @@ class AIControlledActorClient(ExternalDeviceClient):
     def ros_api_settings(self):
         super().ros_api_settings()
 
+        #############
         # parameters
+        #############
         self.declare_parameter('speed', 2.0)
         self.declare_parameter('origin', 'MapOrigin')
         self.declare_parameter('goal_sequence', "[]")
         self.declare_parameter('random_move_bounding_box', [0.0, 0.0, 0.0])
 
-        self.declare_parameter('random_move_by_ros', False) #example usage of client
+        # example usage of client
+        self.declare_parameter('random_move_by_ros', False) 
         self.random_move_by_ros = self.get_parameter('random_move_by_ros').value
         
+        #############
         # pub/sub
+        #############
+        # pub
         self.mode_publisher_ = self.create_publisher(Int32, 'set_mode', 10)
-        self.manual_goal_publisher_ = self.create_publisher(PoseStamped, 'pose_goal', 10)
+        # navigation
+        self.pose_goal_publisher_ = self.create_publisher(PoseStamped, 'pose_goal', 10)
+        self.actor_goal_publisher_ = self.create_publisher(String, 'actor_goal', 10)
+        # pick drop
+        self.pick_goal_publisher_ = self.create_publisher(PointStamped, 'pick_goal', 10)
+        self.pick_actor_goal_publisher_ = self.create_publisher(String, 'pick_actor_goal', 10)
+        self.drop_goal_publisher_ = self.create_publisher(PoseStamped, 'drop_goal', 10)
+        self.drop_actor_goal_publisher_ = self.create_publisher(String, 'drop_actor_goal', 10)
+        self.set_approach_location_publisher_ = self.create_publisher(PointStamped, 'set_approach_location', 10)
+        self.set_approach_location_actor_publisher_ = self.create_publisher(String, 'set_approach_location_actor', 10)
+        self.set_use_default_approach_publisher_ = self.create_publisher(Bool, 'set_use_default_approach', 10)
+                
+        # sub 
         self.nav_status_subscription = self.create_subscription(
             Int32,
             'nav_status',
@@ -78,7 +97,7 @@ class AIControlledActorClient(ExternalDeviceClient):
             10)
         self.task_status_subscription  # prevent unused variable warning
 
-        # default values
+
         self.mode = self.get_parameter('mode').value
         # self.payload_status = False 
         self.speed = self.get_parameter('speed').value

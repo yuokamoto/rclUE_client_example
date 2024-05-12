@@ -15,7 +15,7 @@ import time
 import random
 import rclpy
 from rclpy.node import Node
-from example_interfaces.msg import Int32, Float32, Int32MultiArray
+from example_interfaces.msg import Int32, Float32, Int32MultiArray, Bool
 from geometry_msgs.msg import PoseStamped, Quaternion
 
 from .common import ExternalDeviceClient, ModelNames, AIMoveMode, array_to_vector_param, array_to_pose_param
@@ -83,22 +83,46 @@ class WarehouseClient(Node):
         # create pub/sub
     
     def process_order(self):
-        print('process_order', len(self.agent_list))
+        print('process_order')
         for agent in self.agent_list:
             rclpy.spin_once(agent, timeout_sec=0.001)
-            if agent.task_status == AITaskType.NONE.value and agent.nav_status == AINavigationStatus.IDLE.value:
+            if agent.task_status == AITaskType.NONE.value and agent.nav_status == AINavigationStatus.IDLE.value and len(self.task_list[agent.entity_name]) > 0:
+                print('[{}] send next task'.format(agent.entity_name))
                 #todo check task dependency 
                 task = self.task_list[agent.entity_name].pop(0)
+
                 if 'task_type' not in task:
                     print('task_type not found in task {}'.format(task['task_id'] if 'task_id' in task else 'None'))
                     continue
-                if task['task_type'] == 'Pick':
+
+                # parse param
+                use_default_apporach_location = task['use_default_apporach_location'] if 'use_default_apporach_location' in task else False
+                goal_loction = task['goal_location'] if 'goal_location' in task else None
+                goal_orientation = task['goal_orientation'] if 'goal_orientation' in task else None
+                goal_actor = task['goal_actor'] if 'goal_actor' in task else None
+                approach_location = task['approach_location'] if 'approach_location' in task else None
+                approach_actor = task['approach_actor'] if 'approach_actor' in task else None
+            
+                if task['task_type'] == 'Move':
                     pass
-                elif task['task_type'] == 'Drop':
-                    pass
-                else task['task_type'] == 'Move':
-                    pass
+                else:
+                    # param parser
+                    if use_default_apporach_location:
+                        msg = Bool()
+                        msg.data = True
+                        agent.set_use_default_approach_publisher_.publish(msg)
+                        
+                    elif approach_location is not None:
+                        pass
+                    elif approach_actor is not None and approach_actor != '':
+                        pass
+                    
+                    if task['task_type'] == 'Pick':
+                        pass
+                    elif task['task_type'] == 'Drop':
+                        pass
                 
+
 
             # check task is none and navigation is none
             # if task is none then assign task
