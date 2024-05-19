@@ -14,6 +14,7 @@
 import time
 import random
 import quaternion
+import csv
 
 import rclpy
 from rclpy.node import Node
@@ -59,59 +60,146 @@ class WarehouseClient(Node):
         pass
 
     def parse_csv(self):
-        self.agent_list.append(AIControlledActorClient('AIControlledActorClient', spawn=False, namespace='BP_ROSCharacter14'))
-        self.task_list['BP_ROSCharacter14'] = [
-            {
-                'task_id': 'task_1',
-                'task_type': 'Pick', 
-                # 'goal_location': [],
-                # 'goal_orientation': []
-                'goal_actor': 'BP_Cart',
-                # 'approach_location':[]
-                # 'approach_actor':
-                'use_default_apporach_location': True,
-                'completed': False
-            },
-            {
-                'task_id': 'task_2',
-                'task_type': 'Drop', 
-                'goal_actor': 'DropPoint',
-                'approach_actor': 'ApproachPoint2'
-                'completed': False
-            }
+        # read agent list -> create agent_list and initialize task_list
+        with open('/home/rr/Downloads/testdata(AgentList).csv', "r", encoding="utf-8") as csvfile:
+            reader = csv.DictReader(csvfile)
+            for d in reader:
+                # todo spawn agent
+                if d['spawn']:
+                    pass
+
+                self.agent_list.append(
+                    {
+                        'agent_id': d['agent_id'],
+                        'agent': AIControlledActorClient('AIControlledActorClient', spawn=False, namespace=d['agent_id']),
+                        'current_task': ''
+                    }
+                )
+
+                self.task_list[d['agent_id']] = []
+
+        # read task_list -> append and change defalut value of dependency, location, orienation, dependency
+        with open('/home/rr/Downloads/testdata(TaskList).csv', "r", encoding="utf-8") as csvfile:
+            reader = csv.DictReader(csvfile)
             
-        ]
-        # load csv
-        # parse csv to dict
-        # create task list for agents
-        # create pub/sub
+            def check_value(key, task):
+                return task[key] if key in task and task[key] != '' else False            
+            
+            # udpate default value of optional keys
+            keys = [
+                'use_default_apporach_location', 
+                'goal_location', 
+                'goal_orientation', 
+                'goal_actor', 
+                'approach_location', 
+                'approach_actor'
+            ]
+            for d in reader:
+                for key in keys:
+                    d[key] = check_value(key, d)    
+                d['completed'] = False            
+                self.task_list[d['agent_id']].append(d)
+      
+        # update default values
+        print(self.task_list)
+        # self.task_list['BP_ROSCharacter14'] = [
+        #     {
+        #         'task_id': 'task_1',
+        #         'task_type': 'Pick', 
+        #         # 'goal_location': [],
+        #         # 'goal_orientation': []
+        #         'goal_actor': 'BP_Cart',
+        #         # 'approach_location':[]
+        #         # 'approach_actor':
+        #         'use_default_apporach_location': True,
+        #         'dependency': [],
+        #         'completed': False
+        #     },
+        #     {
+        #         'task_id': 'task_2',
+        #         'task_type': 'Drop', 
+        #         'goal_actor': 'DropPoint',
+        #         'approach_actor': 'ApproachPoint2',
+        #         'dependency': [],
+        #         'completed': False
+        #     }
+            
+        # ]
     
-    def check_task_dependency(self):
-        # get list o task
-        # get list of tasks with dependency
-        # return true if dependent task is completed
-        pass
+    def get_task_by_id(self, agent_name, task_id):
+        for task in self.task_list[agent_name]:
+            if task['task_id'] == task_id:
+                return task
+        return None
+    
+    def get_top_uncompleted_task(self, agent_name):
+        for task in self.task_list[agent_name]:
+            if not task['completed']:
+                return task
+        return None
+    
+    def update_task_status(self, agent_name, task_id, status):
+        task = self.get_task_by_id(agent_name, task_id)
+        if task is not None:
+            task['completed'] = status
+        else:
+            print('task not found with id {}'.format(task_id))
+
+    def get_task_dependency(self, agent_name, task_id):
+        task = self.get_task_by_id(agent_name, task_id)
+        if task is not None:
+            return task['dependency']
+        return None
+
+    def check_task_dependency(self, agent_name, task_id):
+        dependency = self.get_task_dependency(agent_name, task_id)
+        if dependency is not None:
+            for dep in dependency:
+                if not self.get_task_by_id(agent_name, dep)['completed']:
+                    return False
+        return True
 
     def process_order(self):
         print('process_order')
-        for agent in self.agent_list:
+        for ag in self.agent_list:
+            agent = ag['agent']
             rclpy.spin_once(agent, timeout_sec=0.001)
-            if agent.task_status == AITaskType.NONE.value and agent.nav_status == AINavigationStatus.IDLE.value and len(self.task_list[agent.entity_name]) > 0:
-                print('[{}] send next task'.format(agent.entity_name))
-                #todo check task dependency 
-                task = self.task_list[agent.entity_name].pop(0)
+            rclpy.spin_once(agent, timeout_sec=0.001)
+            print( agent.task_status, AITaskType.NONE.value)
+            if agent.task_status == 0 and agent.nav_status == AINavigationStatus.IDLE.value and len(self.task_list[agent.entity_name]) > 0:
+                
+                print('[{}] check next task'.format(agent.entity_name))
 
-                if 'task_type' not in task:
+                # update last task status
+                self.update_task_status(agent.entity_name, ag['current_task'], True)
+                
+                task = self.get_top_uncompleted_task(agent.entity_name)
+                print(task)
+                
+                # task sanity check
+                if task is None:
+                    continue 
+
+                is_dependent_task = not self.check_task_dependency(agent.entity_name, task['task_id'])
+                if is_dependent_task:
+                    print('task {} is dependent'.format(task['task_id']))
+                    continue
+                elif 'task_type' not in task and task['task_type'] not in AITaskType.__members__:
                     print('task_type not found in task {}'.format(task['task_id'] if 'task_id' in task else 'None'))
                     continue
+                
+                print('[{}] send next task'.format(agent.entity_name))
+
+                ag['current_task'] = task['task_id']
+                agent.task_status = task['task_type']
 
                 # parse param
-                use_default_apporach_location = task['use_default_apporach_location'] if 'use_default_apporach_location' in task else False
-                goal_loction = task['goal_location'] if 'goal_location' in task else None
-                goal_orientation = task['goal_orientation'] if 'goal_orientation' in task else None
-                goal_actor = task['goal_actor'] if 'goal_actor' in task else None
-                approach_location = task['approach_location'] if 'approach_location' in task else None
-                approach_actor = task['approach_actor'] if 'approach_actor' in task else None
+                use_default_apporach_location = task['use_default_apporach_location']
+                goal_loction = task['goal_location']
+                goal_orientation = task['goal_orientation']
+                goal_actor = task['goal_actor']
+                approach_location = task['approach_location']
+                approach_actor = task['approach_actor']
             
                 # parse goal location
                 goal_actor_msg = goal_location_msg = goal_orientation_msg = point_stamped_msg = pose_stamped_msg = None
@@ -144,7 +232,7 @@ class WarehouseClient(Node):
                     pose_stamped_msg.pose.orientation = goal_orientation_msg
 
                 # process task
-                if task['task_type'] == 'Move': # nav
+                if task['task_type'] == AITaskType.MOVE.value: # nav
                     if goal_actor_msg is not None:
                         agent.actor_goal_publisher_.publish(goal_actor_msg)
                     elif pose_stamped_msg is not None:
@@ -172,7 +260,7 @@ class WarehouseClient(Node):
                         approach_location_msg.point.z = approach_location[2]
                         agent.set_approach_location_publisher_.publish(approach_location_msg)
                     
-                    if task['task_type'] == 'Pick':
+                    if task['task_type'] == AITaskType.PICK.value:
                         if goal_actor_msg is not None:
                             agent.pick_actor_goal_publisher_.publish(goal_actor_msg)
                         elif point_stamped_msg is not None:
@@ -180,7 +268,7 @@ class WarehouseClient(Node):
                         else:
                             print('Pick task requires target actor or position.')
                             continue
-                    elif task['task_type'] == 'Drop':
+                    elif task['task_type'] == AITaskType.DROP.value:
                         if goal_actor_msg is not None:
                             agent.drop_actor_goal_publisher_.publish(goal_actor_msg)
                         elif pose_stamped_msg is not None:

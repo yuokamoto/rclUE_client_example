@@ -34,6 +34,7 @@ class CharacterMoveStatus(Enum):
 
 class AITaskType(Enum):
     NONE      = 'None'
+    MOVE      = 'Move'
     PICK      = 'Pick'
     DROP      = 'Drop'
 
@@ -123,7 +124,7 @@ class AIControlledActorClient(ExternalDeviceClient):
 
     def nav_status_cb(self, msg):
         self.nav_status = msg.data
-        print('status_cb in AIControlledActorClient', msg.data)
+        print('nav_status_cb in AIControlledActorClient', msg.data)
         if msg.data == CharacterMoveStatus.IDLE.value and self.random_move_by_ros: # reached goal
             if self.mode == AIMoveMode.MANUAL.value: # manual mode
                 goal = PoseStamped()
@@ -135,6 +136,7 @@ class AIControlledActorClient(ExternalDeviceClient):
                 self.get_logger().info('send manual goal to {}'.format(goal))
 
     def task_status_cb(self, msg):
+        print('task_status_cb in AIControlledActorClient', msg.data)
         self.task_status = msg.data
 
 def main(args=None):
