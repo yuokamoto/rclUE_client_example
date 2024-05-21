@@ -18,6 +18,7 @@ import csv
 
 import rclpy
 from rclpy.node import Node
+from rclpy.qos import QoSProfile, QoSDurabilityPolicy
 from example_interfaces.msg import Int32, Float32, Int32MultiArray, Bool, String
 from geometry_msgs.msg import PoseStamped, Quaternion, PointStamped, Pose, Point
 
@@ -31,6 +32,39 @@ from .ai_actor_client import AIControlledActorClient, AITaskType, AINavigationSt
 #     2. Keep sending random goal if it is idle.
 ##########################################################################################
 
+class PayloadClient(Node):
+    def __init__(self, name, model, spawn=False, **kwargs):
+        super().__init__(name, **kwargs)
+        self.payload = None
+        self.payload_sub = None
+        self.children_actor_list = {}
+
+        qos_profile = QoSProfile(
+            depth=1,
+            durability=QoSDurabilityPolicy.TRANSIENT_LOCAL)
+
+        self.children_actor_list_subscription = self.create_subscription(
+            String,
+            'children_actor_list',
+            self.children_actor_list_cb,
+            qos_profile = qos_profile)
+
+        self.children_actor_list_subscription  # prevent unused variable warning
+
+        # todo spawn payload with name and model
+        if  spawn:
+            pass
+    
+    def children_actor_list_cb(self, msg):
+        key_value = msg.data.split(',')
+        for kv in key_value:
+            if ':' in kv:
+                key, value = kv.split(':')
+                self.children_actor_list[key] = value
+    
+    def get_child_actor(self, name):
+        return self.children_actor_list[name]
+        
 
 class WarehouseClient(Node):
     def __init__(self, name, **kwargs):
@@ -38,26 +72,26 @@ class WarehouseClient(Node):
 
         self.task_list = {}
         self.agent_list = []
+        self.payload_list = {}
         # todo handle non agent list tasks
 
         self.ros_api_settings()
         self.parse_csv()
 
+        # todo update if there is new payload
+        for payload in self.payload_list:
+            rclpy.spin_once(self.payload_list[payload], timeout_sec=0.001)
+
         timer_period = 1  # seconds
         self.timer = self.create_timer(timer_period, self.process_order)
 
-    #     self.status_subscription = self.create_subscription(
-    #         Int32,
-    #         'nav_status',
-    #         self.status_cb,
-    #         10)
-    #     self.status_subscription  # prevent unused variable warning
-    
-    # def status_cb(self, msg):
-    #     print('status_cb in WarehouseClient', msg.data)
-
     def ros_api_settings(self):
-        pass
+        topics = self.get_topic_names_and_types()
+        for topic in topics:
+            if 'children_actor_list' in topic[0]:
+                name = topic[0].split('/')[1]
+                self.payload_list[name] = PayloadClient('payload_client', '', spawn=False, namespace=name)
+                
 
     def parse_csv(self):
         # read agent list -> create agent_list and initialize task_list
@@ -83,7 +117,7 @@ class WarehouseClient(Node):
             reader = csv.DictReader(csvfile)
             
             def check_value(key, task):
-                return task[key] if key in task and task[key] != '' else False            
+                return task[key] if key in task and task[key] != '' else None            
             
             # udpate default value of optional keys
             keys = [
@@ -91,6 +125,7 @@ class WarehouseClient(Node):
                 'goal_location', 
                 'goal_orientation', 
                 'goal_actor', 
+                'point_in_goal_actor',
                 'approach_location', 
                 'approach_actor'
             ]
@@ -99,9 +134,9 @@ class WarehouseClient(Node):
                     d[key] = check_value(key, d)    
                 d['completed'] = False            
                 self.task_list[d['agent_id']].append(d)
-      
-        # update default values
-        print(self.task_list)
+
+        # print(self.task_list)
+
         # self.task_list['BP_ROSCharacter14'] = [
         #     {
         #         'task_id': 'task_1',
@@ -160,7 +195,9 @@ class WarehouseClient(Node):
         return True
 
     def process_order(self):
+
         print('process_order')
+
         for ag in self.agent_list:
             agent = ag['agent']
             rclpy.spin_once(agent, timeout_sec=0.001)
@@ -200,10 +237,11 @@ class WarehouseClient(Node):
                 goal_actor = task['goal_actor']
                 approach_location = task['approach_location']
                 approach_actor = task['approach_actor']
+                point_in_goal_actor = task['point_in_goal_actor']
             
                 # parse goal location
                 goal_actor_msg = goal_location_msg = goal_orientation_msg = point_stamped_msg = pose_stamped_msg = None
-                if goal_actor is not None and goal_actor != '':
+                if goal_actor is not None:
                     goal_actor_msg = String()
                     goal_actor_msg.data = goal_actor
 
@@ -270,6 +308,10 @@ class WarehouseClient(Node):
                             continue
                     elif task['task_type'] == AITaskType.DROP.value:
                         if goal_actor_msg is not None:
+                            if point_in_goal_actor is not None and \
+                                goal_actor in self.payload_list and \
+                                point_in_goal_actor in self.payload_list[goal_actor].children_actor_list:
+                                goal_actor_msg.data = self.payload_list[goal_actor].children_actor_list[point_in_goal_actor]
                             agent.drop_actor_goal_publisher_.publish(goal_actor_msg)
                         elif pose_stamped_msg is not None:
                             agent.drop_goal_publisher_.publish(pose_stamped_msg)  
