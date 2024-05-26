@@ -37,6 +37,7 @@ class AITaskType(Enum):
     MOVE      = 'Move'
     PICK      = 'Pick'
     DROP      = 'Drop'
+    GENERAL_ACTION = 'Action'
 
 # same as defined in RRAIRobotROSController.h
 class AINavigationStatus(Enum):
@@ -83,6 +84,8 @@ class AIControlledActorClient(ExternalDeviceClient):
         self.set_approach_location_publisher_ = self.create_publisher(PointStamped, 'set_approach_location', 10)
         self.set_approach_location_actor_publisher_ = self.create_publisher(String, 'set_approach_location_actor', 10)
         self.set_use_default_approach_publisher_ = self.create_publisher(Bool, 'set_use_default_approach', 10)
+        # general action
+        self.general_action_publisher = self.create_publisher(String, 'general_action', 10)
                 
         # sub 
         self.nav_status_subscription = self.create_subscription(
@@ -124,7 +127,7 @@ class AIControlledActorClient(ExternalDeviceClient):
 
     def nav_status_cb(self, msg):
         self.nav_status = msg.data
-        print('nav_status_cb in AIControlledActorClient', msg.data)
+        # print('nav_status_cb in AIControlledActorClient', msg.data)
         if msg.data == CharacterMoveStatus.IDLE.value and self.random_move_by_ros: # reached goal
             if self.mode == AIMoveMode.MANUAL.value: # manual mode
                 goal = PoseStamped()
@@ -136,7 +139,7 @@ class AIControlledActorClient(ExternalDeviceClient):
                 self.get_logger().info('send manual goal to {}'.format(goal))
 
     def task_status_cb(self, msg):
-        print('task_status_cb in AIControlledActorClient', msg.data)
+        # print('task_status_cb in AIControlledActorClient', msg.data)
         self.task_status = msg.data
 
 def main(args=None):
