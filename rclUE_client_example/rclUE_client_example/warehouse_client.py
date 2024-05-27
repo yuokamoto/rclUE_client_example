@@ -57,6 +57,7 @@ class PayloadClient(Node):
             pass
     
     def children_actor_list_cb(self, msg):
+        # print('children_actor_list_cb ', msg)
         key_value = msg.data.split(',')
         for kv in key_value:
             if ':' in kv:
@@ -133,6 +134,7 @@ class WarehouseClient(Node):
                 'point_in_goal_actor',
                 'approach_location', 
                 'approach_actor',
+                'point_in_approach_actor',
                 'dependency'
             ]
             for d in reader:
@@ -236,6 +238,14 @@ class WarehouseClient(Node):
                     return False
         return True
 
+    def get_child_actor(self, actor, point_in_actor):
+        if point_in_actor is not None and \
+            actor in self.payload_list and \
+            point_in_actor in self.payload_list[actor].children_actor_list:
+            return self.payload_list[actor].children_actor_list[point_in_actor]
+        return None
+        
+
     def process_order(self):
 
         # print('process_order')
@@ -280,6 +290,7 @@ class WarehouseClient(Node):
                 approach_location = task['approach_location']
                 approach_actor = task['approach_actor']
                 point_in_goal_actor = task['point_in_goal_actor']
+                point_in_approach_actor = task['point_in_approach_actor']
                 meta_data = task['meta']
             
                 # parse goal location
@@ -287,6 +298,9 @@ class WarehouseClient(Node):
                 if goal_actor is not None:
                     goal_actor_msg = String()
                     goal_actor_msg.data = goal_actor
+                    actor = self.get_child_actor(goal_actor, point_in_goal_actor)
+                    if actor is not None:
+                        goal_actor_msg.data = actor
 
                 elif goal_loction is not None and len(goal_loction) >= 3:
                     goal_location_msg = Point()
@@ -331,6 +345,11 @@ class WarehouseClient(Node):
                     elif approach_actor is not None and approach_actor != '':
                         approach_actor_msg = String()
                         approach_actor_msg.data = approach_actor
+                        
+                        actor = self.get_child_actor(approach_actor, point_in_approach_actor)
+                        if actor is not None:
+                            approach_actor_msg.data = actor
+
                         agent.set_approach_location_actor_publisher_.publish(approach_actor_msg)
 
                     elif approach_location is not None and len(approach_location) >= 3:
@@ -340,6 +359,11 @@ class WarehouseClient(Node):
                         approach_location_msg.point.y = approach_location[1]
                         approach_location_msg.point.z = approach_location[2]
                         agent.set_approach_location_publisher_.publish(approach_location_msg)
+                    
+                    if use_default_apporach_location is not None or \
+                        approach_actor is not None and approach_actor != '' or \
+                        approach_location is not None and len(approach_location) >= 3:
+                        rclpy.spin_once(agent, timeout_sec=0.1)
                     
                     if task['task_type'] == AITaskType.PICK.value:
                         if goal_actor_msg is not None:
@@ -351,20 +375,6 @@ class WarehouseClient(Node):
                             continue
                     elif task['task_type'] == AITaskType.DROP.value:
                         if goal_actor_msg is not None:
-                            # print('test\n', point_in_goal_actor, goal_actor, goal_actor in self.payload_list, '\n\n')
-                            # if point_in_goal_actor is not None and goal_actor in self.payload_list:
-                            #     print(
-                            #         point_in_goal_actor in self.payload_list[goal_actor].children_actor_list, 
-                            #         self.payload_list[goal_actor].children_actor_list[point_in_goal_actor]
-                            #     )
-                            # print(point_in_goal_actor, goal_actor, 
-                            #     point_in_goal_actor in self.payload_list[goal_actor].children_actor_list, 
-                            #     self.payload_list[goal_actor].children_actor_list[point_in_goal_actor]
-                            # )
-                            if point_in_goal_actor is not None and \
-                                goal_actor in self.payload_list and \
-                                point_in_goal_actor in self.payload_list[goal_actor].children_actor_list:
-                                goal_actor_msg.data = self.payload_list[goal_actor].children_actor_list[point_in_goal_actor]
                             agent.drop_actor_goal_publisher_.publish(goal_actor_msg)
                         elif pose_stamped_msg is not None:
                             agent.drop_goal_publisher_.publish(pose_stamped_msg)  
