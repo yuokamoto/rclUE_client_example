@@ -19,7 +19,8 @@ def generate_launch_description():
                 'spawn_pose': [0.0, -15.0, 0.88, 0.0, 0.0, 1.57],
                 'acceptance_radius': 0.1,
                 'speed': 5.0,
-                'model_name': 'BP_ROSCharacter',
+                'reference_frame': 'MapOrigin', # origin by Actor name.
+                'model_name': 'BP_ROSSimpleCharacter',
                 'random_move_by_ros': True
             }]
 
@@ -38,7 +39,7 @@ def generate_launch_description():
                 'spawn_pose': [5.0, 0.0, 0.88, 0.0, 0.0, 0.0],
                 'acceptance_radius': 0.1,
                 'speed': 10.0,
-                'model_name': 'BP_ROSCharacter',
+                'model_name': 'BP_ROSSimpleCharacter',
                 # param for mode=1,2,3
                 'origin': '[5.0, 0, 0.88, 0.0, 0.0, 0.0]', # origin by coordinate.
                 # param for mode=1,2
@@ -64,7 +65,7 @@ def generate_launch_description():
                 'spawn_pose': [0.0, 0.0, 0.88, 0.0, 0.0, 0.0],
                 'acceptance_radius': 0.1,
                 'speed': 10.0,
-                'model_name': 'BP_ROSCharacter',
+                'model_name': 'BP_ROSSimpleCharacter',
                 # param for mode=1,2,3
                 'origin': 'MapOrigin', # origin by Actor name.
                 # param for mode=1,2
@@ -90,7 +91,7 @@ def generate_launch_description():
                 'spawn_pose': [10.0, 0.0, 0.88, 0.0, 0.0, 0.0],
                 'acceptance_radius': 0.1,
                 'speed': 2.0,
-                'model_name': 'BP_ROSCharacter',
+                'model_name': 'BP_ROSSimpleCharacter',
                 # param for mode=1,2,3
                 'origin': 'MapOrigin', # origin by Actor name.
                 # param for mode=3

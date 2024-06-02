@@ -48,8 +48,8 @@ class AINavigationStatus(Enum):
 
 
 class AIControlledActorClient(ExternalDeviceClient):
-    def __init__(self, name, spawn=True, **kwargs):        
-        super().__init__(name, spawn, **kwargs)
+    def __init__(self, name, spawn=True, model_name='BP_ROSCharacter', reference_frame='', initial_pose=[0.0, 0.0, 0.0, 0.0, 0.0, 0.0], **kwargs):        
+        super().__init__(name, spawn, model_name, reference_frame, initial_pose, **kwargs)
         self.nav_status = AINavigationStatus.IDLE.value
         self.task_status = AITaskType.NONE.value
 
@@ -135,7 +135,7 @@ class AIControlledActorClient(ExternalDeviceClient):
                 goal.pose.position.x = random.uniform(-10, 10)
                 goal.pose.position.y = random.uniform(-10, 10) 
                 goal.pose.position.z = 0.0
-                self.manual_goal_publisher_.publish(goal)
+                self.pose_goal_publisher_.publish(goal)
                 self.get_logger().info('send manual goal to {}'.format(goal))
 
     def task_status_cb(self, msg):

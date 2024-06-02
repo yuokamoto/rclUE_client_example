@@ -68,6 +68,13 @@ class PayloadClient(Node):
         return self.children_actor_list[name]
         
 
+def csv_pose_parser(pose='0,0,0,0,0,0'):
+    default = [0,0,0,0,0,0]
+    out = [float(p) for p in pose.split(',')]
+    if len(out) < 6:
+        return default
+    return out
+
 class WarehouseClient(Node):
     def __init__(self, name, **kwargs):
         super().__init__(name, **kwargs)
@@ -104,14 +111,30 @@ class WarehouseClient(Node):
         with open('/home/rr/Downloads/testdata(AgentList).csv', "r", encoding="utf-8") as csvfile:
             reader = csv.DictReader(csvfile)
             for d in reader:
-                # todo spawn agent
-                if d['spawn']:
-                    pass
+                # spawn parameters
+                initial_pose = [0,0,0,0,0,0]
+                reference_frame = ''
+                spawn = False
+                model_name = ''
+                if not d['agent_id']:
+                    continue
 
+                if d['spawn'] == 'True' or d['spawn'] == 'TRUE':
+                    spawn = d['spawn'] == 'True' or d['spawn'] == 'TRUE'
+                    if d['reference_frame']:
+                        reference_frame = d['reference_frame']
+
+                    if d['initial_location']:
+                        initial_pose = csv_pose_parser(d['initial_location'])
+
+                    if d['model_name']:
+                        model_name = d['model_name']
+
+                print(reference_frame, model_name, spawn)
                 self.agent_list.append(
                     {
                         'agent_id': d['agent_id'],
-                        'agent': AIControlledActorClient('AIControlledActorClient', spawn=False, namespace=d['agent_id']),
+                        'agent': AIControlledActorClient('AIControlledActorClient', spawn=spawn, model_name=model_name, reference_frame=reference_frame, initial_pose=initial_pose, namespace=d['agent_id']),
                         'current_task': ''
                     }
                 )
@@ -138,11 +161,14 @@ class WarehouseClient(Node):
                 'dependency'
             ]
             for d in reader:
-                if not d['agent_id'] :
+                if not d['agent_id'] or d['agent_id'] not in self.task_list:
                     continue
 
                 for key in keys:
                     d[key] = check_value(key, d)
+
+                if d['use_default_apporach_location'] == 'True' or d['use_default_apporach_location'] == 'TRUE':
+                    d['use_default_apporach_location'] = d['use_default_apporach_location'] == 'True' or d['use_default_apporach_location'] == 'TRUE'
 
                 if d['meta'] != '':
                     d['meta'] = json.dumps(json.loads(d['meta']))
@@ -248,7 +274,6 @@ class WarehouseClient(Node):
 
     def process_order(self):
 
-        # print('process_order')
         self.update_payload_list()
         for ag in self.agent_list:
             agent = ag['agent']

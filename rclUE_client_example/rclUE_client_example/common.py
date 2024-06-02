@@ -72,13 +72,14 @@ class AIMoveMode(Enum):
     END             = 100
 
 class ExternalDeviceClient(Node):
-    def __init__(self, name, spawn=True, **kwargs):
+    def __init__(self, name, spawn=True, model_name='BP_Conveyor', reference_frame='', initial_pose=[0.0, 0.0, 0.0, 0.0, 0.0, 0.0], **kwargs):
         super().__init__(name, **kwargs)
         self.future = None
-        self.model_name = ""
+        self.model_name = model_name
         self.payload_id = 0
-        self.reference_frame = ''
         self.spawn = spawn
+        self.reference_frame = reference_frame
+        self.initial_pose = initial_pose
 
         # parameters, pub/sub/service
         self.ros_api_settings()
@@ -98,19 +99,19 @@ class ExternalDeviceClient(Node):
         self.declare_parameter('disable_physics', False)
         self.declare_parameter('mode', 0)
         self.declare_parameter('size', [1.0, 1.0, 1.0])
-        self.declare_parameter('spawn_pose', [0.0, 0.0, 0.0, 0.0, 0.0, 0.0])
+        self.declare_parameter('spawn_pose', self.initial_pose)
         self.declare_parameter('payload_spawn_pose', [0.0, 0.0, 3.0, 0.0, 0.0, 0.0])
-        self.declare_parameter('model_name', 'BP_Conveyor')
+        self.declare_parameter('model_name', self.model_name)
 
         self.spawn = self.get_parameter('spawn').value
         self.reference_frame = self.get_parameter('reference_frame').value
-        # get model name
-        self.model_name = self.get_parameter('model_name').value
-        if self.model_name == '':
-            self.get_logger().error('You must provide valid model name as a ROS parameter')
-            self.destroy_node() 
-
         if self.spawn:
+            # get model name
+            self.model_name = self.get_parameter('model_name').value
+            if self.model_name == '':
+                self.get_logger().error('You must provide valid model name as a ROS parameter')
+                self.destroy_node() 
+
             # service clients
             self.spawn_srv_client = self.create_client(SpawnEntity, '/SpawnEntity')
             while not self.spawn_srv_client.wait_for_service(timeout_sec=1.0):
