@@ -1,0 +1,5 @@
+agent_id,spawn,model_name,reference_frame,initial_location
+BP_ROSCharacter1,True,BP_ROSCharacter,ApproachPoint2,"0,0,0,0,0,0"
+BP_CounterFork,False,,,
+BP_CounterFork2,False,,,
+BP_Track,False,,,

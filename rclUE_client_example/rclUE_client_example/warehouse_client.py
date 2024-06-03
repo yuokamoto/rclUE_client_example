@@ -16,10 +16,13 @@ import random
 import quaternion
 import csv
 import json
+import yaml
+import os
 
 import rclpy
 from rclpy.node import Node
 from rclpy.qos import QoSProfile, QoSDurabilityPolicy
+from ament_index_python.packages import get_package_share_directory
 from example_interfaces.msg import Int32, Float32, Int32MultiArray, Bool, String
 from geometry_msgs.msg import PoseStamped, Quaternion, PointStamped, Pose, Point
 
@@ -104,11 +107,35 @@ class WarehouseClient(Node):
                     print('add paylaod:', name)
         
     def ros_api_settings(self):
+        self.agents_file_path = ''
+        self.tasks_file_path = ''
+        self.payloads_file_path = ''
+
+        # load default config file
+        config_file_path = os.path.join(
+            get_package_share_directory('rclUE_client_example'),
+            'config',
+            'warehouse_input_files.yaml'
+        )
+
+        # override from parameter
+        self.declare_parameter('config_file_path', config_file_path)
+        config_file_path = self.get_parameter('config_file_path').value
+
+        config_file_dir_path = os.path.dirname(config_file_path)
+        with open(config_file_path, 'r') as config_file:
+            config = yaml.safe_load(config_file)
+            self.agents_file_path = os.path.join(config_file_dir_path, config['agents_file_path'])
+            self.tasks_file_path = os.path.join(config_file_dir_path, config['tasks_file_path'])
+            self.payloads_file_path = os.path.join(config_file_dir_path, config['payloads_file_path'])
+
+        # print(self.agents_file_path, self.tasks_file_path, self.payloads_file_path)
+
         self.update_payload_list()        
 
     def parse_csv(self):
         # read agent list -> create agent_list and initialize task_list
-        with open('/home/rr/Downloads/testdata(AgentList).csv', "r", encoding="utf-8") as csvfile:
+        with open(self.agents_file_path, "r", encoding="utf-8") as csvfile:
             reader = csv.DictReader(csvfile)
             for d in reader:
                 # spawn parameters
@@ -130,7 +157,7 @@ class WarehouseClient(Node):
                     if d['model_name']:
                         model_name = d['model_name']
 
-                print(reference_frame, model_name, spawn)
+                # print(d['agent_id'])
                 self.agent_list.append(
                     {
                         'agent_id': d['agent_id'],
@@ -142,7 +169,7 @@ class WarehouseClient(Node):
                 self.task_list[d['agent_id']] = []
 
         # read task_list -> append and change defalut value of dependency, location, orienation, dependency
-        with open('/home/rr/Downloads/testdata(TaskList).csv', "r", encoding="utf-8") as csvfile:
+        with open(self.tasks_file_path, "r", encoding="utf-8") as csvfile:
             reader = csv.DictReader(csvfile)
             
             def check_value(key, task):
