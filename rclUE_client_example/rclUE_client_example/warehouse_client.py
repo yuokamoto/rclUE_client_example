@@ -60,7 +60,7 @@ class PayloadClient(Node):
             pass
     
     def children_actor_list_cb(self, msg):
-        # print('children_actor_list_cb ', msg)
+        print('children_actor_list_cb ', msg)
         key_value = msg.data.split(',')
         for kv in key_value:
             if ':' in kv:
@@ -304,6 +304,7 @@ class WarehouseClient(Node):
         self.update_payload_list()
         for ag in self.agent_list:
             agent = ag['agent']
+            rclpy.spin_once(agent, timeout_sec=0.001)
             rclpy.spin_once(agent, timeout_sec=0.001)
             rclpy.spin_once(agent, timeout_sec=0.001)
 
