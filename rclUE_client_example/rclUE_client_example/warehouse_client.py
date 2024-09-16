@@ -82,6 +82,9 @@ class WarehouseClient(Node):
     def __init__(self, name, **kwargs):
         super().__init__(name, **kwargs)
 
+        #temp
+        os.system('ros2 topic list')
+
         self.task_list = {}
         self.agent_list = []
         self.payload_list = {}
