@@ -47,7 +47,8 @@ class TB3Client(ExternalDeviceClient):
         entity_name = self.get_parameter('robot_name').value
         if entity_name == '':
             entity_name = namespace[1:len(namespace)] # remove /
-        self.spawn_self(self.get_parameter('spawn_pose').value, entity_name, namespace, '', self.json_parameters)
+        if self.spawn:
+            self.spawn_self(self.get_parameter('spawn_pose').value, entity_name, namespace, '', self.json_parameters)
 
     def ros_api_settings(self):
         super().ros_api_settings()

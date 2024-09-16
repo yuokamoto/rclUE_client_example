@@ -25,10 +25,10 @@ import quaternion
 from enum import Enum
 
 def array_to_vector_param(in_array):
-    return {'X': in_array[0], 'Y': in_array[1], 'Z': in_array[2]}
+    return {'x': in_array[0], 'y': in_array[1], 'z': in_array[2]}
 
 def array_to_rotation_param(in_array):
-    return {'Roll': in_array[0], 'Pitch': in_array[1], 'Yaw': in_array[2]}
+    return {'roll': in_array[0], 'pitch': in_array[1], 'yaw': in_array[2]}
 
 def array_to_pose_param(in_array):
     return {
@@ -61,46 +61,67 @@ class ModelNames(Enum):
         else:
             raise ValueError(f"'{cls.__name__}' enum not found for '{value}'")
 
+class AIMoveMode(Enum):
+    BEGIN = 0
 
+    MANUAL          = 1
+    SEQUENCE        = 2
+    RANDOM_SEQUENCE = 3
+    RANDOM_AREA     = 4
+
+    END             = 100
 
 class ExternalDeviceClient(Node):
-    def __init__(self, name, **kwargs):
+    def __init__(self, name, spawn=True, model_name='BP_Conveyor', reference_frame='', initial_pose=[0.0, 0.0, 0.0, 0.0, 0.0, 0.0], **kwargs):
         super().__init__(name, **kwargs)
-
         self.future = None
-        self.model_name = ""
+        self.model_name = model_name
         self.payload_id = 0
+        self.spawn = spawn
+        self.reference_frame = reference_frame
+        self.initial_pose = initial_pose
 
         # parameters, pub/sub/service
         self.ros_api_settings()
 
+        # spawn self
+        namespace = self.get_namespace()
+        self.entity_name = namespace[1:len(namespace)] # remove / 
+        if self.spawn:
+            self.spawn_self(self.get_parameter('spawn_pose').value, self.entity_name, self.entity_name, '', self.json_parameters)
+
     def ros_api_settings(self):
         # common ROS parameters
+        self.declare_parameter('spawn', self.spawn)
+        self.declare_parameter('reference_frame', self.reference_frame)
         self.declare_parameter('debug', False)
         self.declare_parameter('enable_widget', True)
         self.declare_parameter('disable_physics', False)
         self.declare_parameter('mode', 0)
         self.declare_parameter('size', [1.0, 1.0, 1.0])
-        self.declare_parameter('spawn_pose', [0.0, 0.0, 0.0, 0.0, 0.0, 0.0])
+        self.declare_parameter('spawn_pose', self.initial_pose)
         self.declare_parameter('payload_spawn_pose', [0.0, 0.0, 3.0, 0.0, 0.0, 0.0])
-        self.declare_parameter('model_name', 'BP_Conveyor')
+        self.declare_parameter('model_name', self.model_name)
 
-        # get model name
-        self.model_name = self.get_parameter('model_name').value
-        if self.model_name == '':
-            self.get_logger().error('You must provide valid model name as a ROS parameter')
-            self.destroy_node() 
+        self.spawn = self.get_parameter('spawn').value
+        self.reference_frame = self.get_parameter('reference_frame').value
+        if self.spawn:
+            # get model name
+            self.model_name = self.get_parameter('model_name').value
+            if self.model_name == '':
+                self.get_logger().error('You must provide valid model name as a ROS parameter')
+                self.destroy_node() 
 
-        # service clients
-        self.spawn_srv_client = self.create_client(SpawnEntity, '/SpawnEntity')
-        while not self.spawn_srv_client.wait_for_service(timeout_sec=1.0):
-            self.get_logger().error('SpawnEntity not available')
-            self.destroy_node() 
-        
-        self.delete_srv_client = self.create_client(DeleteEntity, '/DeleteEntity')
-        while not self.delete_srv_client.wait_for_service(timeout_sec=1.0):
-            self.get_logger().error('DeleteEntity not available')
-            self.destroy_node() 
+            # service clients
+            self.spawn_srv_client = self.create_client(SpawnEntity, '/SpawnEntity')
+            while not self.spawn_srv_client.wait_for_service(timeout_sec=1.0):
+                self.get_logger().error('SpawnEntity not available')
+                self.destroy_node() 
+            
+            self.delete_srv_client = self.create_client(DeleteEntity, '/DeleteEntity')
+            while not self.delete_srv_client.wait_for_service(timeout_sec=1.0):
+                self.get_logger().error('DeleteEntity not available')
+                self.destroy_node() 
 
     
     def parse_size_param(self):
@@ -112,10 +133,15 @@ class ExternalDeviceClient(Node):
         for p_str in points:
             try: # if it given as coordinate
                 p = eval(p_str)
-                if len(p) == 3:
-                    output.append({'position': array_to_vector_param(p)})
+                if len(p) == 6:
+                    output.append({
+                        'pose': {
+                           'position': array_to_vector_param(p[0:3]),
+                           'orientation': array_to_rotation_param(p[3:6])
+                        }
+                    })
                 else:
-                    self.get_logger().info('points length should be 3')
+                    self.get_logger().info('points length should be 6')
             except:  # if it given as actor name
                 output.append({'name': p_str})
         
@@ -153,6 +179,7 @@ class ExternalDeviceClient(Node):
         req.state = EntityState()
         req.state.name = name
         req.state.pose = initial_pose
+        req.state.reference_frame = self.reference_frame 
         req.tags = [tag]
         req.json_parameters = json.dumps(json_parameters)
 
