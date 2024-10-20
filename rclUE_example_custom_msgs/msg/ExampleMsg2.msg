@@ -1,4 +1,0 @@
-string str_field
-int32 int_field
-float32 float_field
-rclue_example_custom_msgs/ExampleMsg example_msg

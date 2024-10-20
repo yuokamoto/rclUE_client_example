@@ -1,0 +1,4 @@
+string str_field2
+int32 int_field
+float32 float_field
+rclue_example_custom_msgs/CustomMsgExample example_msg

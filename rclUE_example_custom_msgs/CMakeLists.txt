@@ -18,8 +18,8 @@ endif()
 # find dependencies
 find_package(ament_cmake REQUIRED)
 
-find_package(ue_msgs REQUIRED)
 find_package(geometry_msgs REQUIRED)
+find_package(ue_msgs REQUIRED)
 find_package(rosidl_default_generators REQUIRED)
 
 set(EXCEPTION_MSG 
